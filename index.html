@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>外服法务通 · 瞬时风控，专家直达 | 交互原型</title>
+<meta name="description" content="外服法务通交互原型：智能法规查询、类案检索智库、7x24智能咨询、一键生成法律分析报告、专家直达闭环。" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: { 50:'#eef3ff',100:'#dbe6ff',200:'#bfd3ff',300:'#93b0f5',400:'#5f8bf0',500:'#2563eb',600:'#1d4ed8',700:'#1a3fae',800:'#173184',900:'#0f2c66' },
+          ink: '#0f172a'
+        },
+        fontFamily: {
+          sans: ['"PingFang SC"','"Microsoft YaHei"','"Source Han Sans SC"','"Noto Sans SC"','system-ui','sans-serif']
+        }
+      }
+    }
+  }
+</script>
+<style>
+/* ============================================================
+   外服法务通 · 原型自定义样式
+   说明：Tailwind 负责基础布局，本文件只放 Tailwind 不方便表达的
+   字体、滚动条、动效、打印样式。
+   ============================================================ */
+
+:root {
+  --c-brand: #1d4ed8;
+  --c-brand-deep: #0f2c66;
+  --c-ink: #0f172a;
+  --c-muted: #64748b;
+  --c-line: #e5e8f0;
+  --c-bg: #f5f7fb;
+  --c-high: #dc2626;
+  --c-mid: #d97706;
+  --c-low: #16a34a;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB",
+    "Source Han Sans SC", "Noto Sans SC", system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  color: var(--c-ink);
+  background: var(--c-bg);
+}
+
+/* ---------- 滚动条 ---------- */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  background-clip: content-box;
+}
+
+/* ---------- 页面切换动画 ---------- */
+.page {
+  display: none;
+}
+.page.is-active {
+  display: block;
+  animation: pageIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 卡片入场：逐个上浮 */
+.rise {
+  animation: rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- 导航 ---------- */
+.nav-item {
+  position: relative;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  background: #60a5fa;
+  border-radius: 0 3px 3px 0;
+  transform: translateY(-50%);
+  transition: height 0.22s ease;
+}
+.nav-item.is-active::before {
+  height: 22px;
+}
+
+/* ---------- 通用小元件 ---------- */
+.chip {
+  border: 1px solid var(--c-line);
+  background: #fff;
+  transition: all 0.16s ease;
+  cursor: pointer;
+  user-select: none;
+}
+.chip:hover {
+  border-color: #a8bdf0;
+  color: var(--c-brand);
+}
+.chip.is-on {
+  background: #eef3ff;
+  border-color: #93b0f5;
+  color: var(--c-brand);
+  font-weight: 600;
+}
+
+.stat-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: #eef1f7;
+  overflow: hidden;
+}
+.stat-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* ---------- 聊天 ---------- */
+.msg {
+  animation: msgIn 0.3s ease both;
+}
+@keyframes msgIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.typing i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 3px;
+  border-radius: 99px;
+  background: #94a3b8;
+  animation: blink 1.2s infinite;
+}
+.typing i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes blink {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* ---------- 时间轴 ---------- */
+.timeline-line {
+  position: absolute;
+  left: 17px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: linear-gradient(180deg, #bfdbfe, #e2e8f0);
+}
+.tl-dot {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 2px solid var(--c-line);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-muted);
+  flex: 0 0 36px;
+}
+.tl-dot.is-done {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+.tl-dot.is-now {
+  border-color: #2563eb;
+  color: #2563eb;
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.14);
+}
+
+/* ---------- 飞轮 ---------- */
+.flywheel {
+  animation: spin 26s linear infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 打印（导出报告 PDF） ---------- */
+@media print {
+  body {
+    background: #fff;
+  }
+  #sidebar,
+  #topbar,
+  .no-print {
+    display: none !important;
+  }
+  #viewport {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  .page {
+    display: none !important;
+  }
+  #page-report.page {
+    display: block !important;
+  }
+  #report-paper {
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
+
+</style>
+</head>
+<body class="font-sans">
+
+<!-- ============================================================
+     整体框架：左侧导航 + 右侧内容区
+     ============================================================ -->
+<div class="flex h-screen overflow-hidden">
+
+  <!-- ==================== 左侧导航 ==================== -->
+  <aside id="sidebar" class="w-[248px] flex-none bg-brand-900 text-white flex flex-col">
+    <!-- 品牌区 -->
+    <div class="px-5 pt-6 pb-5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white/12 border border-white/20 flex items-center justify-center">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/>
+            <path d="M9.2 12.2l2 2 3.6-4"/>
+          </svg>
+        </div>
+        <div class="leading-tight">
+          <div class="text-[17px] font-semibold tracking-wide">外服法务通</div>
+          <div class="text-[11px] text-white/55 mt-[2px]">LawLink · AI + 专家双驱</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 导航列表 -->
+    <nav class="flex-1 px-3 space-y-[3px] overflow-y-auto">
+      <div class="px-3 pt-2 pb-2 text-[11px] font-medium text-white/40 tracking-wider">核心功能</div>
+
+      <button class="nav-item is-active w-full flex items-center gap-3 px-3 py-[10px] rounded-lg text-[14px] text-white/80 hover:text-white hover:bg-white/8" data-page="dashboard">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+        <span>瞬时风控工作台</span>
+      </button>
+
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-[10px] rounded-lg text-[14px] text-white/80 hover:text-white hover:bg-white/8" data-page="law">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 016.5 3H19v15H6.5A2.5 2.5 0 004 20.5V5.5z"/><path d="M8 7.5h7M8 11h5"/></svg>
+        <span>智能法规查询</span>
+        <span class="ml-auto text-[10px] px-1.5 py-[2px] rounded bg-sky-400/20 text-sky-200 font-medium">增强版</span>
+      </button>
+
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-[10px] rounded-lg text-[14px] text-white/80 hover:text-white hover:bg-white/8" data-page="cases">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M5 8h14M7 8l-3 6h6L7 8zM17 8l-3 6h6l-3-6z"/></svg>
+        <span>类案检索智库</span>
+      </button>
+
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-[10px] rounded-lg text-[14px] text-white/80 hover:text-white hover:bg-white/8" data-page="chat">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z"/><path d="M9 11h6M9 14h4"/></svg>
+        <span>7×24 智能咨询</span>
+        <span class="ml-auto w-[7px] h-[7px] rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,.22)]"></span>
+      </button>
+
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-[10px] rounded-lg text-[14px] text-white/80 hover:text-white hover:bg-white/8" data-page="report">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+        <span>一键生成报告</span>
+      </button>
+
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-[10px] rounded-lg text-[14px] text-white/80 hover:text-white hover:bg-white/8" data-page="experts">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.6a4 4 0 00-4-4H7a4 4 0 00-4 4V20"/><circle cx="9.5" cy="7.5" r="3.2"/><path d="M17 11.5a3.2 3.2 0 100-6.4M21 20v-1.6a4 4 0 00-3-3.87"/></svg>
+        <span>专家直达</span>
+      </button>
+
+      <div class="px-3 pt-5 pb-2 text-[11px] font-medium text-white/40 tracking-wider">项目</div>
+      <button class="nav-item w-full flex items-center gap-3 px-3 py-[10px] rounded-lg text-[14px] text-white/80 hover:text-white hover:bg-white/8" data-page="about">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.2"/></svg>
+        <span>项目概况 · 里程碑</span>
+      </button>
+    </nav>
+
+    <!-- 底部：用户信息 -->
+    <div class="p-3">
+      <div class="rounded-xl bg-white/8 border border-white/10 px-3 py-3 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-sky-400 to-brand-500 flex items-center justify-center text-[13px] font-semibold">冯</div>
+        <div class="leading-tight min-w-0">
+          <div class="text-[13px] font-medium truncate">冯洁妍</div>
+          <div class="text-[11px] text-white/50 truncate">上海外服广东公司 · 智法先锋</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== 右侧内容区 ==================== -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- 顶栏 -->
+    <header id="topbar" class="flex-none h-[68px] bg-white border-b border-[#e5e8f0] px-7 flex items-center gap-4">
+      <div class="min-w-0">
+        <h1 id="page-title" class="text-[17px] font-semibold text-ink leading-tight">瞬时风控工作台</h1>
+        <p id="page-sub" class="text-[12px] text-slate-500 mt-[3px] truncate">风险秒级识别 · 高价值需求自动直连专家</p>
+      </div>
+
+      <div class="ml-auto flex items-center gap-3 no-print">
+        <div class="hidden lg:flex items-center gap-2 px-3 h-9 rounded-lg bg-slate-50 border border-[#e5e8f0] text-[12px] text-slate-600">
+          <span class="w-[6px] h-[6px] rounded-full bg-emerald-500"></span>
+          政策库已同步至 2026-08 · 覆盖 <b class="text-ink font-semibold">512</b> 城市
+        </div>
+        <div class="hidden xl:flex items-center gap-2 px-3 h-9 rounded-lg bg-brand-50 border border-brand-100 text-[12px] text-brand-700 font-medium">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/></svg>
+          瞬时风控 · 已开启
+        </div>
+      </div>
+    </header>
+
+    <!-- 页面容器 -->
+    <main id="viewport" class="flex-1 overflow-y-auto p-7">
+
+      <!-- ==========================================================
+           页面 1：瞬时风控工作台
+           ========================================================== -->
+      <section id="page-dashboard" class="page is-active" data-title="瞬时风控工作台" data-sub="风险秒级识别 · 高价值需求自动直连专家">
+
+        <!-- KPI -->
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4" id="kpi-row"></div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mt-5">
+
+          <!-- 瞬时体检 -->
+          <div class="xl:col-span-2 rise rounded-2xl bg-white border border-[#e5e8f0] shadow-[0_1px_2px_rgba(16,24,40,.04)]">
+            <div class="px-6 pt-5 pb-4 border-b border-[#eef1f7] flex items-center gap-3">
+              <span class="w-1 h-4 rounded bg-brand-500"></span>
+              <h3 class="font-semibold text-[15px]">瞬时风控体检</h3>
+              <span class="tag bg-brand-50 text-brand-700 border border-brand-100">AI 引擎 v3.2</span>
+            </div>
+            <div class="p-6">
+              <p class="text-[13px] text-slate-500 mb-3">用一句话描述你正在处理的用工情形，系统将秒级输出风险等级、风险点与属地化依据。</p>
+              <div class="flex gap-3">
+                <input id="risk-input" type="text" value="试用期第 2 个月，员工考核不合格，想直接解除劳动合同"
+                  class="flex-1 h-12 px-4 rounded-xl border border-[#dde3ee] bg-slate-50/60 text-[14px] outline-none focus:border-brand-400 focus:bg-white focus:ring-4 focus:ring-brand-50 transition" />
+                <button id="risk-btn" class="h-12 px-6 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[.98] text-white text-[14px] font-medium transition shadow-sm whitespace-nowrap">
+                  瞬时体检
+                </button>
+              </div>
+              <div id="risk-result" class="mt-5"></div>
+            </div>
+          </div>
+
+          <!-- 待办 / 预警 -->
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] shadow-[0_1px_2px_rgba(16,24,40,.04)]" style="animation-delay:.06s">
+            <div class="px-6 pt-5 pb-4 border-b border-[#eef1f7] flex items-center gap-3">
+              <span class="w-1 h-4 rounded bg-rose-500"></span>
+              <h3 class="font-semibold text-[15px]">高危预警 · 待专家介入</h3>
+              <span id="todo-count" class="ml-auto text-[12px] text-slate-400"></span>
+            </div>
+            <div id="todo-list" class="p-3 space-y-2"></div>
+          </div>
+        </div>
+
+        <!-- 近 7 日趋势 + 分流结构 -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mt-5">
+          <div class="xl:col-span-2 rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.1s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-sky-500"></span>
+              <h3 class="font-semibold text-[15px]">近 7 日咨询量与 AI 自主解决率</h3>
+              <span class="ml-auto text-[12px] text-slate-400">单位：次 / %</span>
+            </div>
+            <div id="trend-chart" class="h-[186px] flex items-end gap-3"></div>
+          </div>
+
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.14s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-amber-500"></span>
+              <h3 class="font-semibold text-[15px]">咨询分流结构</h3>
+            </div>
+            <div id="split-list" class="space-y-4"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================================
+           页面 2：智能法规查询（增强版 · 本地化适用指引）
+           ========================================================== -->
+      <section id="page-law" class="page" data-title="智能法规查询增强版" data-sub="512 城属地政策库 · 输出“本地化适用指引”而非单纯法条">
+
+        <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-[13px] text-slate-500">用工所在地</span>
+              <div id="law-cities" class="flex flex-wrap gap-2"></div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-3 mt-5">
+            <div class="relative flex-1 min-w-[300px]">
+              <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input id="law-query" type="text" value="试用期解除劳动合同是否合法"
+                class="w-full h-12 pl-11 pr-4 rounded-xl border border-[#dde3ee] bg-slate-50/60 text-[14px] outline-none focus:border-brand-400 focus:bg-white focus:ring-4 focus:ring-brand-50 transition" />
+            </div>
+            <button id="law-btn" class="h-12 px-6 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[.98] text-white text-[14px] font-medium transition shadow-sm">查询适用指引</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-4 text-[12px]">
+            <span class="text-slate-400 mr-1">常用：</span>
+            <span class="chip px-3 py-1 rounded-full" data-law-quick="加班费计算基数如何确定">加班费基数</span>
+            <span class="chip px-3 py-1 rounded-full" data-law-quick="竞业限制补偿金标准">竞业限制补偿</span>
+            <span class="chip px-3 py-1 rounded-full" data-law-quick="经济性裁员的法定程序">经济性裁员程序</span>
+            <span class="chip px-3 py-1 rounded-full" data-law-quick="劳务派遣用工比例上限">派遣用工比例</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mt-5">
+          <div class="xl:col-span-2 rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.06s">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="w-1 h-4 rounded bg-brand-500"></span>
+              <h3 class="font-semibold text-[15px]">本地化适用指引</h3>
+              <span id="law-scope" class="tag bg-slate-100 text-slate-600 ml-auto"></span>
+            </div>
+            <div id="law-summary" class="space-y-4"></div>
+          </div>
+
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.1s">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="w-1 h-4 rounded bg-sky-500"></span>
+              <h3 class="font-semibold text-[15px]">同题差异速览</h3>
+            </div>
+            <div id="law-diff" class="space-y-3"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.14s">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="w-1 h-4 rounded bg-emerald-500"></span>
+              <h3 class="font-semibold text-[15px]">法条依据</h3>
+            </div>
+            <div id="law-articles" class="space-y-3"></div>
+          </div>
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.18s">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="w-1 h-4 rounded bg-amber-500"></span>
+              <h3 class="font-semibold text-[15px]">实操清单 · 可勾选</h3>
+              <span id="law-progress" class="ml-auto text-[12px] text-slate-400"></span>
+            </div>
+            <div id="law-checklist" class="space-y-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================================
+           页面 3：垂直类案检索智库
+           ========================================================== -->
+      <section id="page-cases" class="page" data-title="垂直类案检索智库" data-sub="劳动争议垂直语料 · 输出判例倾向预判而非罗列判决书">
+
+        <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6">
+          <div class="flex flex-wrap gap-3">
+            <div class="relative flex-1 min-w-[300px]">
+              <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input id="case-query" type="text" value="试用期以不符合录用条件解除 违法解除赔偿金"
+                class="w-full h-12 pl-11 pr-4 rounded-xl border border-[#dde3ee] bg-slate-50/60 text-[14px] outline-none focus:border-brand-400 focus:bg-white focus:ring-4 focus:ring-brand-50 transition" />
+            </div>
+            <button id="case-btn" class="h-12 px-6 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[.98] text-white text-[14px] font-medium transition shadow-sm">检索并预判</button>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 mt-4 text-[12px]">
+            <span class="text-slate-400 mr-1">裁判年份</span>
+            <span class="chip px-3 py-1 rounded-full is-on" data-case-year="全部">全部</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-year="2025">2025</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-year="2024">2024</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-year="2023">2023</span>
+            <span class="text-slate-400 ml-4 mr-1">法院层级</span>
+            <span class="chip px-3 py-1 rounded-full is-on" data-case-level="全部">全部</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-level="高级人民法院">高院</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-level="中级人民法院">中院</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-5 mt-5">
+          <!-- 倾向预判 -->
+          <div class="xl:col-span-2 rise rounded-2xl bg-white border border-[#e5e8f0] p-6">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="w-1 h-4 rounded bg-violet-500"></span>
+              <h3 class="font-semibold text-[15px]">判例倾向预判</h3>
+            </div>
+            <p class="text-[12px] text-slate-400 mb-5">基于 1,286 份同类生效裁判文书统计</p>
+            <div id="case-tendency" class="space-y-4"></div>
+            <div class="mt-6 pt-5 border-t border-[#eef1f7]">
+              <div class="text-[12px] text-slate-400 mb-2">核心裁判要旨</div>
+              <p id="case-gist" class="text-[13px] leading-6 text-slate-700"></p>
+            </div>
+          </div>
+
+          <!-- 类案列表 -->
+          <div class="xl:col-span-3 rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.06s">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="w-1 h-4 rounded bg-brand-500"></span>
+              <h3 class="font-semibold text-[15px]">类案清单</h3>
+              <span id="case-count" class="ml-auto text-[12px] text-slate-400"></span>
+            </div>
+            <div id="case-list" class="space-y-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================================
+           页面 4：7×24 智能咨询 + 专家智能分流
+           ========================================================== -->
+      <section id="page-chat" class="page" data-title="7×24 智能咨询" data-sub="AI 即时解答并智能分流，复杂需求一键直达领域专家">
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <!-- 对话区 -->
+          <div class="xl:col-span-2 rise rounded-2xl bg-white border border-[#e5e8f0] flex flex-col h-[calc(100vh-160px)] min-h-[520px]">
+            <div class="flex-none px-6 py-4 border-b border-[#eef1f7] flex items-center gap-3">
+              <span class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-sky-400 flex items-center justify-center text-white">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/></svg>
+              </span>
+              <div class="leading-tight">
+                <div class="font-semibold text-[14px]">法务通智能助手</div>
+                <div class="text-[11px] text-slate-400 mt-[2px] flex items-center gap-1">
+                  <span class="w-[6px] h-[6px] rounded-full bg-emerald-500"></span> 在线 · 已接入 512 城属地政策库
+                </div>
+              </div>
+              <span class="ml-auto tag bg-slate-100 text-slate-500">会话 #FSG-20261008-0417</span>
+            </div>
+
+            <div id="chat-log" class="flex-1 overflow-y-auto px-6 py-5 space-y-5 bg-slate-50/40"></div>
+
+            <div class="flex-none border-t border-[#eef1f7] p-4">
+              <div id="chat-quick" class="flex flex-wrap gap-2 mb-3"></div>
+              <div class="flex gap-3">
+                <input id="chat-input" type="text" placeholder="描述你的用工问题，例如：员工不辞而别，工资怎么结？"
+                  class="flex-1 h-11 px-4 rounded-xl border border-[#dde3ee] bg-slate-50/60 text-[14px] outline-none focus:border-brand-400 focus:bg-white focus:ring-4 focus:ring-brand-50 transition" />
+                <button id="chat-send" class="h-11 px-5 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[.98] text-white text-[14px] font-medium transition">发送</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 专家分流 -->
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] flex flex-col h-[calc(100vh-160px)] min-h-[520px]" style="animation-delay:.06s">
+            <div class="flex-none px-6 py-4 border-b border-[#eef1f7] flex items-center gap-3">
+              <span class="w-1 h-4 rounded bg-brand-500"></span>
+              <h3 class="font-semibold text-[15px]">专家智能分流</h3>
+            </div>
+            <div class="flex-1 overflow-y-auto p-5">
+              <div id="match-head" class="rounded-xl bg-brand-50 border border-brand-100 p-4 mb-4">
+                <div class="text-[12px] text-brand-700 font-medium mb-1">当前需求识别</div>
+                <div id="match-intent" class="text-[14px] font-semibold text-brand-900">等待对话输入…</div>
+              </div>
+              <div class="text-[12px] text-slate-400 mb-3">匹配专家（按契合度排序）</div>
+              <div id="match-list" class="space-y-3"></div>
+            </div>
+            <div class="flex-none p-5 pt-0">
+              <button id="match-cta" class="w-full h-11 rounded-xl bg-brand-900 hover:bg-brand-800 text-white text-[14px] font-medium transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                一键直连专家
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================================
+           页面 5：一键生成法律分析报告
+           ========================================================== -->
+      <section id="page-report" class="page" data-title="一键生成法律分析报告" data-sub="自动输出风险点、法规依据与处置建议草案，可导出交付">
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <!-- 生成配置 -->
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6 no-print">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-brand-500"></span>
+              <h3 class="font-semibold text-[15px]">报告配置</h3>
+            </div>
+
+            <label class="text-[12px] text-slate-500">报告模板</label>
+            <div id="rpt-tpl" class="space-y-2 mt-2 mb-5"></div>
+
+            <label class="text-[12px] text-slate-500">用工所在地</label>
+            <select id="rpt-city" class="w-full h-11 mt-2 mb-5 px-3 rounded-xl border border-[#dde3ee] bg-slate-50/60 text-[14px] outline-none focus:border-brand-400 focus:bg-white transition">
+              <option>广州市</option><option>上海市</option><option>深圳市</option><option>北京市</option><option>杭州市</option><option>成都市</option>
+            </select>
+
+            <label class="text-[12px] text-slate-500">案情描述</label>
+            <textarea id="rpt-scene" rows="5" class="w-full mt-2 mb-5 p-3 rounded-xl border border-[#dde3ee] bg-slate-50/60 text-[13px] leading-6 outline-none focus:border-brand-400 focus:bg-white transition resize-none">某科技公司拟对一名入职 2 个月的员工，以"试用期考核不合格"为由解除劳动合同，员工月薪 12,000 元，未签订书面录用条件确认书，考核记录仅有直属主管口头评价。</textarea>
+
+            <button id="rpt-gen" class="w-full h-12 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[.99] text-white text-[14px] font-medium transition shadow-sm">生成分析报告</button>
+
+            <div id="rpt-progress" class="mt-5 hidden">
+              <div class="flex items-center justify-between text-[12px] text-slate-500 mb-2">
+                <span id="rpt-step">正在解析案情…</span><span id="rpt-pct">0%</span>
+              </div>
+              <div class="stat-bar"><i id="rpt-bar" style="width:0%;background:linear-gradient(90deg,#2563eb,#38bdf8)"></i></div>
+            </div>
+          </div>
+
+          <!-- 报告纸面 -->
+          <div class="xl:col-span-2">
+            <div id="report-holder" class="rise rounded-2xl bg-white border border-[#e5e8f0] min-h-[560px] flex items-center justify-center" style="animation-delay:.06s">
+              <div class="text-center px-10 py-20">
+                <div class="w-16 h-16 mx-auto rounded-2xl bg-slate-50 border border-[#e5e8f0] flex items-center justify-center text-slate-300">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z"/><path d="M14 3v5h5"/></svg>
+                </div>
+                <p class="mt-4 text-[14px] text-slate-500">左填写案情，点击「生成分析报告」</p>
+                <p class="text-[12px] text-slate-400 mt-1">系统将自动产出风险点清单、法规依据与处置建议草案</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================================
+           页面 6：专家直达 · 服务闭环
+           ========================================================== -->
+      <section id="page-experts" class="page" data-title="专家直达 · 服务闭环" data-sub="AI 识别复杂需求并按领域智能分派，服务流程线上化、节点可视化">
+
+        <!-- 流程时间轴 -->
+        <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="w-1 h-4 rounded bg-brand-500"></span>
+            <h3 class="font-semibold text-[15px]">专家服务闭环流程</h3>
+            <span class="ml-auto tag bg-emerald-50 text-emerald-700 border border-emerald-100">全流程线上化 · 节点可视化</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-4" id="flow-steps"></div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 mt-5">
+          <!-- 专家列表 -->
+          <div class="xl:col-span-2 rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.06s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-brand-500"></span>
+              <h3 class="font-semibold text-[15px]">智法先锋 · 专家库</h3>
+              <span class="ml-auto text-[12px] text-slate-400">上海外服广东公司 · 8 人团队</span>
+            </div>
+            <div id="expert-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+          </div>
+
+          <!-- 商业飞轮 -->
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.1s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-amber-500"></span>
+              <h3 class="font-semibold text-[15px]">商业飞轮</h3>
+            </div>
+            <div class="flex justify-center py-2">
+              <svg viewBox="0 0 240 240" width="220" height="220">
+                <circle cx="120" cy="120" r="86" fill="none" stroke="#e5e8f0" stroke-width="1.5" stroke-dasharray="4 5"/>
+                <g class="flywheel">
+                  <path d="M120 34a86 86 0 0161 25" fill="none" stroke="#93b0f5" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M181 59a86 86 0 0125 61" fill="none" stroke="#93b0f5" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M206 120a86 86 0 01-25 61" fill="none" stroke="#93b0f5" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M181 181a86 86 0 01-61 25" fill="none" stroke="#93b0f5" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M120 206a86 86 0 01-61-25" fill="none" stroke="#93b0f5" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M59 181a86 86 0 01-25-61" fill="none" stroke="#93b0f5" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M34 120a86 86 0 0125-61" fill="none" stroke="#93b0f5" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M59 59a86 86 0 0161-25" fill="none" stroke="#93b0f5" stroke-width="3" stroke-linecap="round"/>
+                </g>
+                <circle cx="120" cy="120" r="52" fill="#eef3ff" stroke="#dbe6ff"/>
+                <text x="120" y="112" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">AI 引流</text>
+                <text x="120" y="132" text-anchor="middle" font-size="11" fill="#2563eb">数据反哺</text>
+              </svg>
+            </div>
+            <div class="space-y-3 mt-2">
+              <div class="flex items-start gap-3"><span class="tag bg-brand-50 text-brand-700 border border-brand-100">1</span><p class="text-[13px] text-slate-600 leading-6">AI 基础服务免费 / 低价引流，扩大客群基数</p></div>
+              <div class="flex items-start gap-3"><span class="tag bg-sky-50 text-sky-700 border border-sky-100">2</span><p class="text-[13px] text-slate-600 leading-6">即时、专业的响应建立客户信任</p></div>
+              <div class="flex items-start gap-3"><span class="tag bg-violet-50 text-violet-700 border border-violet-100">3</span><p class="text-[13px] text-slate-600 leading-6">复杂需求转专家深度服务，实现价值变现</p></div>
+              <div class="flex items-start gap-3"><span class="tag bg-emerald-50 text-emerald-700 border border-emerald-100">4</span><p class="text-[13px] text-slate-600 leading-6">沉淀匿名实践数据，反哺 AI 迭代与产品化复制</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================================
+           页面 7：项目概况 · 里程碑
+           ========================================================== -->
+      <section id="page-about" class="page" data-title="项目概况 · 里程碑" data-sub="东浩兰生“AI来赛”数智化创新大赛 · 赛博革新赛道">
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div class="xl:col-span-2 rise rounded-2xl bg-gradient-to-br from-brand-900 to-brand-700 text-white p-7">
+            <div class="text-[12px] text-white/60 mb-2">东浩兰生 2026-2027 专项劳动竞赛暨"AI来赛"数智化创新大赛</div>
+            <h2 class="text-[26px] font-semibold leading-snug">外服法务通：瞬时风控，专家直达</h2>
+            <p class="text-[13px] text-white/70 mt-3 leading-6 max-w-[640px]">依托外服 40 余年专业积淀与数千起实战案例，融合 AI 技术构建"智能工具 + 专家智慧"双驱新生态，突破时空壁垒，实现普惠合规与专家价值最大化。</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-7" id="about-meta"></div>
+          </div>
+
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.06s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-amber-500"></span>
+              <h3 class="font-semibold text-[15px]">三维评级口径</h3>
+              <span class="ml-auto text-[11px] text-slate-400">集团项目组评定</span>
+            </div>
+            <div class="rounded-xl border border-[#e5e8f0] p-5 mb-4">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[12px] text-slate-500">难度星级</span>
+                <span class="text-[15px] font-semibold tracking-[2px] text-amber-500">★★★★</span>
+              </div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[12px] text-slate-500">成熟度</span>
+                <span class="tag bg-sky-50 text-sky-700 border border-sky-100">概念设计期</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[12px] text-slate-500">本期建议类型</span>
+                <span class="tag bg-brand-50 text-brand-700 border border-brand-100">里程碑 + 跃迁</span>
+              </div>
+            </div>
+            <div class="text-[12px] text-slate-400 leading-6">
+              42 个项目总览第 26 号 · 外服云/广东公司 · 赛博革新赛道<br/>
+              概念期项目评审口径：先问 M1 是否完成，再看跃迁清单认领情况。
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.1s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-brand-500"></span>
+              <h3 class="font-semibold text-[15px]">落地里程碑</h3>
+            </div>
+            <div class="space-y-4" id="milestones"></div>
+          </div>
+
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.14s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-emerald-500"></span>
+              <h3 class="font-semibold text-[15px]">两级跃迁路径</h3>
+            </div>
+            <div class="space-y-4" id="leaps"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+/* ==============================================================
+   外服法务通 · 交互原型脚本
+   --------------------------------------------------------------
+   代码分三块，便于阅读与二次修改：
+     ① DATA    —— 演示数据配置（所有文案、指标、模拟结果集中在此）
+     ② RENDER  —— 渲染函数（把数据画到页面上）
+     ③ EVENTS  —— 交互逻辑（导航切换、查询、对话、报告生成）
+   ============================================================== */
+
+/* ==============================================================
+   ① DATA —— 演示数据配置区
+   ============================================================== */
+const DATA = {
+
+  /* ---------- 工作台 KPI ---------- */
+  kpi: [
+    { label: '今日咨询量', value: '1,284', unit: '次', delta: '+18.6%', up: true, hint: '较昨日' },
+    { label: 'AI 自主解决率', value: '82.4', unit: '%', delta: '+4.1pt', up: true, hint: '目标 80%' },
+    { label: '转专家工单', value: '226', unit: '件', delta: '+12 件', up: true, hint: '高价值需求' },
+    { label: '平均响应时长', value: '1.8', unit: '秒', delta: '-0.6s', up: false, hint: 'AI 首响' }
+  ],
+
+  /* ---------- 近 7 日趋势 ---------- */
+  trend: [
+    { day: '10-02', count: 812, rate: 74 },
+    { day: '10-03', count: 764, rate: 76 },
+    { day: '10-04', count: 918, rate: 78 },
+    { day: '10-05', count: 1046, rate: 79 },
+    { day: '10-06', count: 1187, rate: 81 },
+    { day: '10-07', count: 1209, rate: 82 },
+    { day: '10-08', count: 1284, rate: 82.4 }
+  ],
+
+  /* ---------- 咨询分流结构 ---------- */
+  split: [
+    { name: 'AI 直接解决', pct: 82, color: '#2563eb' },
+    { name: '转专家深度服务', pct: 13, color: '#7c3aed' },
+    { name: '转人工客服引导', pct: 5, color: '#f59e0b' }
+  ],
+
+  /* ---------- 待专家介入的高危工单 ---------- */
+  todos: [
+    { title: '试用期解除举证不足', client: '某科技公司', city: '广州', level: '高', time: '8 分钟前', expert: '劳动法 · 张律师' },
+    { title: '竞业限制补偿未支付争议', client: '某医疗器械公司', city: '深圳', level: '高', time: '23 分钟前', expert: '争议解决 · 李律师' },
+    { title: '经济性裁员程序合规审查', client: '某制造企业', city: '佛山', level: '中', time: '1 小时前', expert: '合规 · 陈顾问' },
+    { title: '三期女员工调岗争议', client: '某零售连锁', city: '东莞', level: '高', time: '2 小时前', expert: '劳动法 · 王律师' },
+    { title: '灵活用工协议边界确认', client: '某互联网平台', city: '广州', level: '中', time: '3 小时前', expert: '新业态 · 周顾问' }
+  ],
+
+  /* ---------- 瞬时风控：按关键词命中的风险方案 ---------- */
+  riskRules: [
+    {
+      keys: ['试用期', '考核', '不合格'],
+      level: '高',
+      title: '试用期以“不符合录用条件”解除，举证风险高',
+      points: [
+        '未事先书面告知并签收录用条件 → 无法证明“不符合录用条件”',
+        '仅有主管口头评价，缺乏客观量化考核证据',
+        '解除通知未在试用期届满前送达，视为试用期后解除'
+      ],
+      basis: ['《劳动合同法》第 21 条', '《劳动合同法》第 39 条第 1 项', '广东省高院、省仲裁委座谈会纪要（粤高法〔2017〕147 号）'],
+      advice: '先补齐录用条件签收件与量化考核记录；若证据无法补正，建议改为协商解除并支付经济补偿，避免被认定违法解除后承担 2N 赔偿金。'
+    },
+    {
+      keys: ['竞业', '限制'],
+      level: '中',
+      title: '竞业限制条款效力与补偿支付风险',
+      points: [
+        '未约定或未实际支付月补偿金，条款可能被认定无效或无法主张违约金',
+        '竞业范围过宽、期限超过 2 年，超出部分无效',
+        '仅对高级管理人员、高级技术人员和负有保密义务人员有效'
+      ],
+      basis: ['《劳动合同法》第 23、24 条', '最高法劳动争议司法解释（一）第 36—40 条'],
+      advice: '按离职前十二个月平均工资的 30%（不低于当地最低工资）按月支付补偿金；竞业期限与地域范围按实际涉密程度收敛。'
+    },
+    {
+      keys: ['加班', '加班费'],
+      level: '中',
+      title: '加班费计算基数与工时制度风险',
+      points: [
+        '以“基本工资”为基数计算加班费，可能被认定低于法定口径',
+        '实行综合计算工时制未经行政审批，仍按标准工时计算加班费',
+        '考勤记录缺失，加班事实认定将倾向劳动者主张'
+      ],
+      basis: ['《劳动法》第 44 条', '《工资支付暂行规定》第 13 条'],
+      advice: '统一以劳动合同约定工资（不低于当地最低工资）为加班费基数；确需特殊工时的，先完成行政审批并保留批复文件。'
+    },
+    {
+      keys: ['裁员', '经济性裁员', '解除'],
+      level: '高',
+      title: '批量解除程序合规风险',
+      points: [
+        '裁减 20 人以上或占比 10% 以上，未提前 30 日说明情况并听取工会/全体职工意见',
+        '未向劳动行政部门报告裁减人员方案',
+        '六个月内重新招用未优先通知被裁人员'
+      ],
+      basis: ['《劳动合同法》第 41 条', '《企业经济性裁减人员规定》'],
+      advice: '严格履行“说明情况 → 听取意见 → 报告人社部门 → 公布方案”四步程序，并保留全部书面证据链。'
+    },
+    {
+      keys: ['不辞而别', '自动离职', '旷工'],
+      level: '中',
+      title: '员工擅自离岗的处理风险',
+      points: [
+        '“自动离职”不成立，未依法送达解除通知前劳动关系仍然存续',
+        '直接停缴社保、停发工资可能被认定违法解除',
+        '旷工事实需有考勤、催告记录支撑'
+      ],
+      basis: ['《劳动合同法》第 39 条第 2 项', '《劳动合同法》第 50 条'],
+      advice: '以书面（EMS + 邮件 + 短信）方式催告返岗，仍不返岗的按规章制度作出解除决定并送达，再办理退工与社保停缴。'
+    }
+  ],
+
+  /* ---------- 智能法规查询：城市与属地化指引 ---------- */
+  lawCities: ['广州市', '上海市', '深圳市', '北京市', '杭州市', '成都市'],
+
+  lawByCity: {
+    '广州市': {
+      scope: '广东省 · 广州市（含市辖区裁审口径）',
+      stricter: '较严格',
+      summary: '试用期解除需同时满足“录用条件事先明示 + 考核标准可量化 + 解除在试用期内送达”三项要件。仅凭主管口头评价主张“不符合录用条件”的，广东地区裁审机构多认定违法解除。',
+      keyPoints: [
+        '录用条件须以书面形式告知并由劳动者签收，未签收的举证责任在用人单位',
+        '考核标准应客观可量化（如量化指标、客户投诉率、考核评分表），并留有过程记录',
+        '解除通知必须在试用期届满前送达劳动者，逾期解除按正式期解除审查'
+      ],
+      diffNote: '实务中对“录用条件”的书面化要求最严，口头告知基本不被采信。',
+      winRate: 34
+    },
+    '上海市': {
+      scope: '上海市（含浦东新区裁审口径）',
+      stricter: '严格',
+      summary: '上海口径强调录用条件明示与解除程序正当。若录用条件明确、考核程序完备，企业胜诉率相对高于珠三角；但程序瑕疵（未通知工会、未送达）仍会被认定违法解除。',
+      keyPoints: [
+        '录用条件应在 offer 或劳动合同附件中明确，且与岗位职责一一对应',
+        '试用期考核应有民主程序通过的规章制度作为依据',
+        '解除前应履行告知说明义务，并保留送达凭证'
+      ],
+      diffNote: '对企业程序合规的审查最细，注重“制度依据”与“民主程序”。',
+      winRate: 43
+    },
+    '深圳市': {
+      scope: '广东省 · 深圳市（经济特区条例优先适用）',
+      stricter: '严格',
+      summary: '深圳地区同时适用《深圳经济特区和谐劳动关系促进条例》，对劳动者保护力度较强。试用期解除除需证明“不符合录用条件”外，还需关注特区条例关于解除通知与工会程序的特别规定。',
+      keyPoints: [
+        '特区条例对解除程序有更细化的要求，需同时满足国家法与特区条例',
+        '涉及集体性用工调整的，应履行特区条例规定的协商程序',
+        '电子送达需确保劳动者可确认接收，避免程序风险'
+      ],
+      diffNote: '特区条例叠加适用，程序要求比省内其他城市更多一层。',
+      winRate: 31
+    },
+    '北京市': {
+      scope: '北京市（含北京高院劳动争议会议纪要口径）',
+      stricter: '较严格',
+      summary: '北京地区要求用人单位对“不符合录用条件”承担完整举证责任，且强调解除时间节点的严格性。试用期届满后作出的解除，即使事由成立也会被认定违法解除。',
+      keyPoints: [
+        '录用条件与岗位说明书需对应一致，避免“通用条款”被认定不明确',
+        '考核结论应经劳动者确认或至少送达留痕',
+        '试用期届满前必须完成解除通知的送达'
+      ],
+      diffNote: '对解除时间节点要求最严格，超期一天即转为正式期解除标准。',
+      winRate: 38
+    },
+    '杭州市': {
+      scope: '浙江省 · 杭州市',
+      stricter: '适中',
+      summary: '浙江地区口径相对平衡，在用人单位能提供基础证据的前提下，较看重双方实际履行情况与诚信原则，但举证不足时仍倾向保护劳动者。',
+      keyPoints: [
+        '重视实际履行中的沟通记录（邮件、钉钉/企业微信记录可作证据）',
+        '考核制度未公示的，效力易被否定',
+        '协商解除并支付合理补偿，是风险最低的路径'
+      ],
+      diffNote: '对电子证据的采纳度较高，沟通留痕可部分弥补书面化不足。',
+      winRate: 41
+    },
+    '成都市': {
+      scope: '四川省 · 成都市',
+      stricter: '适中',
+      summary: '四川地区在试用期解除案件中，对“录用条件是否明确”审查较严，同时对用人单位内部规章制度合法性（内容合法 + 民主程序 + 公示）有完整要求。',
+      keyPoints: [
+        '规章制度须经民主程序制定并公示，否则不能作为解除依据',
+        '录用条件应具体到岗位可衡量的产出要求',
+        '解除后应及时办理退工与档案转移，避免次生争议'
+      ],
+      diffNote: '对规章制度的合法性链条审查更完整。',
+      winRate: 39
+    }
+  },
+
+  /* ---------- 法条依据 ---------- */
+  lawArticles: [
+    { code: '《劳动合同法》第二十一条', text: '在试用期中，除劳动者有本法第三十九条和第四十条第一项、第二项规定的情形外，用人单位不得解除劳动合同。用人单位在试用期解除劳动合同的，应当向劳动者说明理由。' },
+    { code: '《劳动合同法》第三十九条第一项', text: '劳动者在试用期间被证明不符合录用条件的，用人单位可以解除劳动合同。' },
+    { code: '《劳动合同法》第四十八条、第八十七条', text: '用人单位违法解除劳动合同，劳动者要求继续履行的应当继续履行；不要求继续履行或已不能继续履行的，用人单位应当依照经济补偿标准的二倍支付赔偿金。' },
+    { code: '粤高法〔2017〕147 号座谈会纪要', text: '用人单位以“不符合录用条件”解除劳动合同的，应就录用条件的明确告知、考核标准的客观可量化以及解除在试用期内作出承担举证责任。' }
+  ],
+
+  /* ---------- 实操清单 ---------- */
+  lawChecklist: [
+    '核查录用条件是否已书面告知并由员工签收',
+    '确认考核标准是否客观可量化、有过程记录',
+    '核对解除通知的作出与送达日期是否在试用期内',
+    '检查解除理由是否书面载明并说明依据',
+    '评估是否需履行工会（职工代表）告知程序',
+    '评估改走协商解除并支付经济补偿的成本对比'
+  ],
+
+  /* ---------- 类案检索 ---------- */
+  caseTendency: [
+    { name: '支持劳动者（认定违法解除）', pct: 68, color: '#dc2626' },
+    { name: '部分支持（调整赔偿金额）', pct: 18, color: '#d97706' },
+    { name: '支持用人单位', pct: 14, color: '#16a34a' }
+  ],
+  caseGist: '用人单位以“试用期考核不合格”为由解除劳动合同的，须举证证明录用条件已明确告知且有客观考核依据。仅提供直属主管的考核评价，未提供量化指标、考核制度及员工签收记录的，多数裁判认定为违法解除，需支付二倍经济补偿标准的赔偿金。',
+
+  cases: [
+    { no: '（2025）粤01民终4821号', court: '广州市中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose', title: '某科技公司试用期解除劳动合同争议案', gist: '公司仅提交主管评价表，未提供录用条件签收记录，法院认定违法解除，判付赔偿金 24,000 元。' },
+    { no: '（2025）粤03民终2196号', court: '深圳市中级人民法院', year: '2025', level: '中级人民法院', result: '部分支持', color: 'amber', title: '某医疗器械公司试用期考核解除案', gist: '公司提供了岗位说明书但无签收，法院认定解除违法但劳动者已入职新单位，调整赔偿计算基数。' },
+    { no: '（2024）沪01民终7734号', court: '上海市第一中级人民法院', year: '2024', level: '中级人民法院', result: '支持用人单位', color: 'emerald', title: '某咨询公司试用期不符合录用条件解除案', gist: '公司提供录用条件确认书、量化考核表及送达凭证，程序完备，法院认定解除合法。' },
+    { no: '（2024）粤民申1187号', court: '广东省高级人民法院', year: '2024', level: '高级人民法院', result: '支持劳动者', color: 'rose', title: '试用期届满后作出解除决定案', gist: '解除通知送达日已超过试用期，法院认定应按正式期解除标准审查，构成违法解除。' },
+    { no: '（2023）京03民终9021号', court: '北京市第三中级人民法院', year: '2023', level: '中级人民法院', result: '支持劳动者', color: 'rose', title: '录用条件约定不明确解除案', gist: '录用条件为“符合岗位要求”等笼统表述，法院认定标准不明确，举证不能，构成违法解除。' }
+  ],
+
+  /* ---------- 智能咨询：预置问答 ---------- */
+  chatQuick: ['试用期解除要赔多少钱？', '竞业限制补偿金标准', '加班费基数怎么算', '员工不辞而别怎么处理'],
+
+  chatFlows: [
+    {
+      match: ['试用期', '赔'],
+      answer: '试用期解除的赔偿要分两种情况看：\n\n**① 合法解除（试用期被证明不符合录用条件）**：无需支付经济补偿，但必须承担举证责任——需要录用条件书面告知并签收、考核标准客观可量化、解除在试用期内送达。\n\n**② 违法解除**：劳动者要求继续履行的应继续履行；不要求或已不能继续履行的，需按经济补偿标准的 **二倍** 支付赔偿金（2N）。\n\n以月薪 12,000 元、入职 2 个月为例：经济补偿 = 0.5 个月 × 12,000 = 6,000 元，赔偿金 2N = **12,000 元**。',
+      basis: ['《劳动合同法》第 21 条', '《劳动合同法》第 39 条第 1 项', '《劳动合同法》第 87 条'],
+      confidence: 92,
+      intent: '试用期违法解除赔偿金测算',
+      complex: true
+    },
+    {
+      match: ['竞业'],
+      answer: '竞业限制的三个关键数字：\n\n**补偿标准**：月补偿一般不低于离职前十二个月平均工资的 **30%**，且不低于当地最低工资标准；未约定标准的，按此口径认定。\n**期限上限**：不超过 **2 年**，超出部分无效。\n**违约金**：可以约定，但过高时法院会按实际损失酌减，一般不超过补偿总额的 3 倍。\n\n另需注意：竞业限制仅适用于高级管理人员、高级技术人员和其他负有保密义务的人员，对普通岗位约定竞业限制，多数地区认定无效。',
+      basis: ['《劳动合同法》第 23、24 条', '最高法劳动争议司法解释（一）第 36—40 条'],
+      confidence: 89,
+      intent: '竞业限制条款效力与补偿标准',
+      complex: false
+    },
+    {
+      match: ['加班'],
+      answer: '加班费计算基数，是实操中争议最大的点：\n\n**基数口径**：应以劳动合同约定的正常工作时间工资为基数，且不得低于当地最低工资标准。仅以“基本工资”拆分后计算加班费，被认定不足额的风险很高。\n**倍数**：工作日延时 150%、休息日不能安排补休 200%、法定节假日 300%。\n**综合计算工时制**：必须经人社部门审批，未审批的仍按标准工时计算加班费。\n\n建议同时固定考勤证据链（打卡记录 + 审批单 + 工资条），举证责任在用人单位一方。',
+      basis: ['《劳动法》第 44 条', '《工资支付暂行规定》第 13 条'],
+      confidence: 90,
+      intent: '加班费基数与工时制度合规',
+      complex: false
+    },
+    {
+      match: ['不辞而别', '擅自', '自动离职'],
+      answer: '注意：法律上并不存在“自动离职”这一概念。\n\n在用人单位依法作出并送达解除通知之前，劳动关系仍然存续，此时直接停缴社保、停发工资，很容易被认定为违法解除。\n\n建议按三步处理：\n**① 催告返岗**：以 EMS、企业邮箱、短信三种方式同时送达返岗催告函，留存凭证；\n**② 作出解除**：逾期未返岗的，依规章制度按旷工作出解除决定，并书面送达；\n**③ 办理退工**：送达后办理档案转移与社保停缴，出具离职证明。',
+      basis: ['《劳动合同法》第 39 条第 2 项', '《劳动合同法》第 50 条'],
+      confidence: 87,
+      intent: '员工擅自离岗的合规处置路径',
+      complex: true
+    }
+  ],
+
+  chatDefault: {
+    answer: '已将你的问题记录并完成初步检索。\n\n从你描述的情形看，涉及用工合规判断，建议补充以下信息以便给出更准确的属地化指引：\n\n**① 用工所在城市**（不同城市裁审口径差异明显）\n**② 员工入职时间与月薪**（影响补偿/赔偿测算）\n**③ 公司现有证据**（劳动合同、规章制度、考核记录、沟通留痕）\n\n你也可以直接点击右下角「一键直连专家」，由领域律师 30 分钟内给出可落地的处置方案。',
+    basis: ['《劳动合同法》', '各属地裁审指导意见'],
+    confidence: 74,
+    intent: '待补充要素的用工合规咨询',
+    complex: true
+  },
+
+  /* ---------- 专家库（智法先锋 · 8 人） ---------- */
+  experts: [
+    { name: '冯洁妍', role: '项目负责人 · 人力资源法务', years: 16, score: 4.9, orders: 682, domains: ['劳动法', '用工合规'], pct: 96 },
+    { name: '张伟', role: '劳动法资深律师', years: 14, score: 4.9, orders: 611, domains: ['劳动争议', '试用期解除'], pct: 94 },
+    { name: '李文静', role: '争议解决专家', years: 12, score: 4.8, orders: 538, domains: ['仲裁诉讼', '竞业限制'], pct: 92 },
+    { name: '陈立', role: '企业合规顾问', years: 13, score: 4.8, orders: 495, domains: ['规章制度', '经济性裁员'], pct: 90 },
+    { name: '王芳', role: '特殊群体用工顾问', years: 11, score: 4.7, orders: 421, domains: ['三期女员工', '工伤'], pct: 88 },
+    { name: '周明', role: '新业态用工专家', years: 9, score: 4.7, orders: 356, domains: ['灵活用工', '派遣外包'], pct: 85 },
+    { name: '林晓东', role: '薪税与社保顾问', years: 10, score: 4.8, orders: 402, domains: ['薪税合规', '社保基数'], pct: 87 },
+    { name: '黄珊', role: '涉外用工顾问', years: 8, score: 4.6, orders: 287, domains: ['外籍员工', '跨境用工'], pct: 82 }
+  ],
+
+  /* ---------- 专家服务闭环流程 ---------- */
+  flowSteps: [
+    { step: '01', title: 'AI 识别需求', desc: '7×24 在线接待，秒级判定复杂度与所属法域', state: 'done' },
+    { step: '02', title: '智能分派专家', desc: '按领域、属地、负荷三重维度自动派单', state: 'done' },
+    { step: '03', title: '专家接单受理', desc: '30 分钟内响应，明确交付清单与时间节点', state: 'now' },
+    { step: '04', title: '过程可视化', desc: '服务节点实时可查，关键结论同步留痕', state: 'todo' },
+    { step: '05', title: '交付与归档', desc: '成果归档入知识库，反哺 AI 与产品迭代', state: 'todo' }
+  ],
+
+  /* ---------- 报告模板 ---------- */
+  reportTpls: [
+    { id: 'risk', name: '解除操作风险评估报告', desc: '面向单次解除行为的合规性与赔偿测算', on: true },
+    { id: 'check', name: '用工合规体检报告', desc: '面向企业整体用工制度的风险扫描' },
+    { id: 'dispute', name: '争议应对方案', desc: '面向已发生争议的应诉与谈判策略' }
+  ],
+
+  /* ---------- 项目概况 ---------- */
+  aboutMeta: [
+    { k: '参赛组别', v: '赛博革新' },
+    { k: '申报单位', v: '上海外服广东公司' },
+    { k: '参赛队名', v: '智法先锋' },
+    { k: '团队规模', v: '8 人' }
+  ],
+
+  milestones: [
+    { id: 'M1', title: 'AI 智能底座上线', date: '2026 Q4', desc: '完成 500+ 城市属地政策库与数千起实战案例入库，智能法规查询与 7×24 咨询跑通。', done: true },
+    { id: 'M2', title: '专家闭环打通', date: '2027 Q1', desc: '需求识别—智能分派—过程可视—交付归档全链路线上化，服务节点可追踪。', done: false },
+    { id: 'M3', title: '报告生成与产品化', date: '2027 Q2', desc: '一键生成法律分析报告上线，标准化产品包（文书小包、组织优化小包）试销。', done: false },
+    { id: 'M4', title: '集团级复制', date: '2027 Q3', desc: '模式复制至外服中国各分支机构及集团其他专业板块，形成可复制标杆。', done: false }
+  ],
+
+  leaps: [
+    {
+      tag: '上一级 · ★★★★☆ 体系化平台',
+      period: '约 1—2 个月',
+      focus: ['补数据地基：多源政策数据自动更新与校验', '做知识库：案例与规则库结构化、持续质控', '加自动校验：输出结论风险分级与置信度提示'],
+      color: 'brand'
+    },
+    {
+      tag: '上上级 · ★★★★★ 产品化 / 高阶智能化',
+      period: '约 2—3 个月',
+      focus: ['系统集成：与客户 HR 系统、电子签、合同库打通', '智能预测：争议概率预测与处置路径推荐', '产品化：标准化服务包 SaaS 化输出、多智能体协同'],
+      color: 'violet'
+    }
+  ]
+};
+
+/* ==============================================================
+   ② RENDER —— 渲染函数区
+   ============================================================== */
+
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+/* 小工具：生成内联 SVG 图标 */
+function icon(path, size) {
+  const s = size || 16;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+}
+
+/* 小工具：风险等级配色 */
+const LEVEL_STYLE = {
+  '高': { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100', dot: 'bg-rose-500' },
+  '中': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100', dot: 'bg-amber-500' },
+  '低': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100', dot: 'bg-emerald-500' }
+};
+
+/* ---------- 工作台 ---------- */
+function renderDashboard() {
+  // KPI 卡片
+  $('#kpi-row').innerHTML = DATA.kpi.map((k, i) => `
+    <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-5 shadow-[0_1px_2px_rgba(16,24,40,.04)]" style="animation-delay:${i * 0.05}s">
+      <div class="flex items-center justify-between">
+        <span class="text-[12px] text-slate-500">${k.label}</span>
+        <span class="text-[11px] font-medium ${k.up ? 'text-emerald-600' : 'text-brand-600'}">${k.delta}</span>
+      </div>
+      <div class="mt-3 flex items-baseline gap-1">
+        <span class="text-[27px] font-semibold tracking-tight leading-none">${k.value}</span>
+        <span class="text-[12px] text-slate-400">${k.unit}</span>
+      </div>
+      <div class="text-[11px] text-slate-400 mt-2">${k.hint}</div>
+    </div>`).join('');
+
+  // 趋势图（纯 CSS 柱状 + 折线点）
+  const max = Math.max.apply(null, DATA.trend.map(t => t.count));
+  $('#trend-chart').innerHTML = DATA.trend.map((t, i) => `
+    <div class="flex-1 flex flex-col items-center justify-end h-full gap-2">
+      <span class="text-[11px] text-slate-400">${t.count}</span>
+      <div class="w-full rounded-t-md bg-gradient-to-t from-brand-100 to-brand-400 rise"
+           style="height:${Math.round((t.count / max) * 118)}px;animation-delay:${i * 0.05}s"></div>
+      <div class="w-full h-[3px] rounded-full bg-sky-400" style="opacity:${t.rate / 100}"></div>
+      <span class="text-[11px] text-slate-400">${t.day}</span>
+    </div>`).join('');
+
+  // 分流结构
+  $('#split-list').innerHTML = DATA.split.map(s => `
+    <div>
+      <div class="flex items-center justify-between text-[13px] mb-2">
+        <span class="text-slate-600">${s.name}</span>
+        <span class="font-semibold">${s.pct}%</span>
+      </div>
+      <div class="stat-bar"><i style="width:${s.pct}%;background:${s.color}"></i></div>
+    </div>`).join('');
+
+  renderTodos();
+}
+
+function renderTodos() {
+  $('#todo-count').textContent = `共 ${DATA.todos.length} 条`;
+  $('#todo-list').innerHTML = DATA.todos.map(t => {
+    const L = LEVEL_STYLE[t.level];
+    return `
+    <div class="rounded-xl border border-[#eef1f7] hover:border-brand-200 hover:bg-brand-50/30 p-3 cursor-pointer transition group">
+      <div class="flex items-start gap-2">
+        <span class="w-[7px] h-[7px] rounded-full ${L.dot} mt-[6px] flex-none"></span>
+        <div class="min-w-0 flex-1">
+          <div class="text-[13px] font-medium text-ink truncate group-hover:text-brand-700">${t.title}</div>
+          <div class="text-[11px] text-slate-400 mt-1">${t.client} · ${t.city}</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="tag ${L.bg} ${L.text} border ${L.border}">${t.level}风险</span>
+            <span class="text-[11px] text-slate-400">${t.expert}</span>
+            <span class="ml-auto text-[11px] text-slate-300">${t.time}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- 瞬时风控体检 ---------- */
+function runRiskCheck() {
+  const q = $('#risk-input').value.trim();
+  const rule = DATA.riskRules.find(r => r.keys.some(k => q.indexOf(k) >= 0)) || DATA.riskRules[0];
+  const L = LEVEL_STYLE[rule.level];
+  const box = $('#risk-result');
+
+  box.innerHTML = `<div class="flex items-center gap-2 text-[13px] text-slate-400 py-6 justify-center">
+      <span class="typing"><i></i><i></i><i></i></span> 正在比对属地政策库与类案裁判倾向…
+    </div>`;
+
+  setTimeout(() => {
+    box.innerHTML = `
+      <div class="rounded-xl border ${L.border} ${L.bg} p-5 rise">
+        <div class="flex items-center gap-3">
+          <span class="tag ${L.bg} ${L.text} border ${L.border} text-[13px] px-3 py-1.5">${rule.level}风险</span>
+          <h4 class="font-semibold text-[15px] ${L.text}">${rule.title}</h4>
+          <span class="ml-auto text-[11px] text-slate-400">识别耗时 0.9s · 依据 512 城政策库</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-5">
+          <div>
+            <div class="text-[12px] font-semibold text-slate-500 mb-2">主要风险点</div>
+            <ul class="space-y-2">
+              ${rule.points.map(p => `<li class="flex gap-2 text-[13px] leading-6 text-slate-700"><span class="text-slate-300 mt-[3px]">${icon('<path d="M5 12l4 4L19 6"/>', 13)}</span><span>${p}</span></li>`).join('')}
+            </ul>
+          </div>
+          <div>
+            <div class="text-[12px] font-semibold text-slate-500 mb-2">法规依据</div>
+            <div class="flex flex-wrap gap-2">
+              ${rule.basis.map(b => `<span class="tag bg-white text-slate-600 border border-[#e5e8f0]">${b}</span>`).join('')}
+            </div>
+          </div>
+          <div>
+            <div class="text-[12px] font-semibold text-slate-500 mb-2">处置建议</div>
+            <p class="text-[13px] leading-6 text-slate-700">${rule.advice}</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mt-5 pt-4 border-t ${L.border}">
+          <button class="h-9 px-4 rounded-lg bg-white border border-[#e5e8f0] text-[13px] text-slate-600 hover:border-brand-300 hover:text-brand-700 transition" data-risk-jump="report">一键生成分析报告</button>
+          <button class="h-9 px-4 rounded-lg bg-white border border-[#e5e8f0] text-[13px] text-slate-600 hover:border-brand-300 hover:text-brand-700 transition" data-risk-jump="experts">转专家深度评估</button>
+          <button class="h-9 px-4 rounded-lg bg-white border border-[#e5e8f0] text-[13px] text-slate-600 hover:border-brand-300 hover:text-brand-700 transition" data-risk-jump="law">查看属地适用指引</button>
+        </div>
+      </div>`;
+  }, 620);
+}
+
+/* ---------- 智能法规查询 ---------- */
+let lawCity = '广州市';
+
+function renderLawCities() {
+  $('#law-cities').innerHTML = DATA.lawCities.map(c => `
+    <span class="chip px-3 py-1.5 rounded-lg text-[13px] ${c === lawCity ? 'is-on' : ''}" data-law-city="${c}">${c}</span>`).join('');
+}
+
+function renderLaw() {
+  const d = DATA.lawByCity[lawCity];
+  $('#law-scope').textContent = d.scope;
+
+  // 结论摘要
+  $('#law-summary').innerHTML = `
+    <div class="rounded-xl bg-brand-50 border border-brand-100 p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="tag bg-white text-brand-700 border border-brand-100">
+          ${icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/>', 13)} 本地化适用指引
+        </span>
+        <span class="tag bg-white text-slate-600 border border-brand-100">审查尺度 · ${d.stricter}</span>
+        <span class="ml-auto text-[12px] text-brand-700">同类案件企业胜诉参考率 ${d.winRate}%</span>
+      </div>
+      <p class="text-[13.5px] leading-7 text-brand-900">${d.summary}</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      ${d.keyPoints.map((p, i) => `
+        <div class="rounded-xl border border-[#e5e8f0] p-4">
+          <div class="text-[12px] font-semibold text-brand-600 mb-2">要点 ${i + 1}</div>
+          <p class="text-[13px] leading-6 text-slate-600">${p}</p>
+        </div>`).join('')}
+    </div>
+    <div class="rounded-xl border border-amber-100 bg-amber-50/60 p-4 flex gap-3">
+      <span class="text-amber-600 flex-none mt-[1px]">${icon('<path d="M12 9v4M12 16.5v.2M10.3 3.9L2.5 18a2 2 0 001.7 3h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>', 16)}</span>
+      <div>
+        <div class="text-[12px] font-semibold text-amber-700 mb-1">属地差异提示</div>
+        <p class="text-[13px] leading-6 text-amber-900">${d.diffNote}</p>
+      </div>
+    </div>`;
+
+  // 同题差异速览
+  const order = ['广州市', '上海市', '深圳市', '北京市', '杭州市', '成都市'];
+  $('#law-diff').innerHTML = order.map(c => {
+    const x = DATA.lawByCity[c];
+    const on = c === lawCity;
+    return `
+      <div class="rounded-xl border ${on ? 'border-brand-300 bg-brand-50/50' : 'border-[#eef1f7]'} p-3 cursor-pointer transition hover:border-brand-200" data-law-city="${c}">
+        <div class="flex items-center gap-2">
+          <span class="text-[13px] font-medium ${on ? 'text-brand-700' : 'text-slate-700'}">${c}</span>
+          <span class="tag ${x.stricter === '严格' || x.stricter === '较严格' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-500'}">${x.stricter}</span>
+          <span class="ml-auto text-[12px] font-semibold text-slate-600">${x.winRate}%</span>
+        </div>
+        <div class="stat-bar mt-2"><i style="width:${x.winRate}%;background:${on ? '#2563eb' : '#cbd5e1'}"></i></div>
+      </div>`;
+  }).join('');
+
+  // 法条依据
+  $('#law-articles').innerHTML = DATA.lawArticles.map(a => `
+    <div class="rounded-xl border border-[#eef1f7] p-4 hover:border-brand-200 transition">
+      <div class="text-[13px] font-semibold text-brand-700 mb-2">${a.code}</div>
+      <p class="text-[13px] leading-6 text-slate-600">${a.text}</p>
+    </div>`).join('');
+
+  // 实操清单
+  $('#law-checklist').innerHTML = DATA.lawChecklist.map((c, i) => `
+    <label class="flex items-start gap-3 rounded-xl border border-[#eef1f7] p-3 cursor-pointer hover:border-brand-200 hover:bg-brand-50/30 transition">
+      <input type="checkbox" class="law-check mt-1 w-[15px] h-[15px] accent-brand-600" />
+      <span class="text-[13px] leading-6 text-slate-700">${c}</span>
+    </label>`).join('');
+  updateLawProgress();
+}
+
+function updateLawProgress() {
+  const all = $$('.law-check');
+  const done = all.filter(c => c.checked).length;
+  $('#law-progress').textContent = all.length ? `已完成 ${done} / ${all.length}` : '';
+}
+
+/* ---------- 类案检索 ---------- */
+let caseYear = '全部';
+let caseLevel = '全部';
+
+function renderCases() {
+  // 倾向预判
+  const maxPct = Math.max.apply(null, DATA.caseTendency.map(t => t.pct));
+  $('#case-tendency').innerHTML = DATA.caseTendency.map(t => `
+    <div>
+      <div class="flex items-center justify-between text-[13px] mb-2">
+        <span class="text-slate-600">${t.name}</span>
+        <span class="font-semibold" style="color:${t.color}">${t.pct}%</span>
+      </div>
+      <div class="stat-bar"><i style="width:${(t.pct / maxPct) * 100}%;background:${t.color}"></i></div>
+    </div>`).join('');
+  $('#case-gist').textContent = DATA.caseGist;
+
+  // 类案清单
+  const list = DATA.cases.filter(c =>
+    (caseYear === '全部' || c.year === caseYear) &&
+    (caseLevel === '全部' || c.level === caseLevel));
+  $('#case-count').textContent = `命中 ${list.length} 篇相关裁判文书`;
+
+  const COLOR = {
+    rose: 'bg-rose-50 text-rose-700 border-rose-100',
+    amber: 'bg-amber-50 text-amber-700 border-amber-100',
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100'
+  };
+
+  $('#case-list').innerHTML = list.length ? list.map(c => `
+    <div class="rounded-xl border border-[#eef1f7] hover:border-brand-200 hover:shadow-[0_2px_10px_rgba(16,24,40,.05)] transition p-4 cursor-pointer">
+      <div class="flex items-start gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="text-[14px] font-medium text-ink truncate">${c.title}</div>
+          <div class="text-[12px] text-slate-400 mt-1">${c.no} · ${c.court} · ${c.year}</div>
+          <p class="text-[13px] leading-6 text-slate-600 mt-2">${c.gist}</p>
+        </div>
+        <span class="tag ${COLOR[c.color]} border flex-none">${c.result}</span>
+      </div>
+    </div>`).join('')
+    : `<div class="text-center text-[13px] text-slate-400 py-12">当前筛选条件下暂无命中，请调整年份或法院层级</div>`;
+}
+
+/* ---------- 智能咨询 ---------- */
+function pushMsg(role, html) {
+  const log = $('#chat-log');
+  const el = document.createElement('div');
+  el.className = 'msg flex gap-3';
+  if (role === 'user') {
+    el.className = 'msg flex gap-3 justify-end';
+    el.innerHTML = `
+      <div class="max-w-[78%] rounded-2xl rounded-tr-sm bg-brand-600 text-white px-4 py-3 text-[13.5px] leading-6">${html}</div>
+      <div class="w-8 h-8 rounded-full bg-slate-200 flex-none flex items-center justify-center text-[12px] font-semibold text-slate-600">冯</div>`;
+  } else {
+    el.innerHTML = `
+      <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-sky-400 flex-none flex items-center justify-center text-white">
+        ${icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/>', 15)}
+      </div>
+      <div class="max-w-[82%] rounded-2xl rounded-tl-sm bg-white border border-[#eef1f7] px-4 py-3.5 shadow-[0_1px_2px_rgba(16,24,40,.04)]">${html}</div>`;
+  }
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+  return el;
+}
+
+function mdToHtml(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<b class="font-semibold text-ink">$1</b>')
+    .replace(/\n/g, '<br/>');
+}
+
+function askChat(question) {
+  pushMsg('user', question);
+
+  const flow = DATA.chatFlows.find(f => f.match.some(m => question.indexOf(m) >= 0)) || DATA.chatDefault;
+
+  // 打字指示器
+  const holder = document.createElement('div');
+  holder.className = 'msg flex gap-3';
+  holder.innerHTML = `
+    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-sky-400 flex-none flex items-center justify-center text-white">
+      ${icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/>', 15)}
+    </div>
+    <div class="rounded-2xl rounded-tl-sm bg-white border border-[#eef1f7] px-4 py-3.5">
+      <span class="typing text-[13px] text-slate-400"><i></i><i></i><i></i> 正在检索属地政策库与类案…</span>
+    </div>`;
+  const log = $('#chat-log');
+  log.appendChild(holder);
+  log.scrollTop = log.scrollHeight;
+
+  setTimeout(() => {
+    holder.remove();
+    pushMsg('ai', `
+      <div class="text-[13.5px] leading-7 text-slate-700">${mdToHtml(flow.answer)}</div>
+      <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#f1f4f9]">
+        ${flow.basis.map(b => `<span class="tag bg-slate-50 text-slate-500 border border-[#eef1f7]">${b}</span>`).join('')}
+      </div>
+      <div class="flex items-center gap-3 mt-3">
+        <span class="text-[11px] text-slate-400">AI 置信度</span>
+        <div class="stat-bar w-[110px]"><i style="width:${flow.confidence}%;background:linear-gradient(90deg,#2563eb,#38bdf8)"></i></div>
+        <span class="text-[11px] font-semibold text-brand-700">${flow.confidence}%</span>
+        <span class="ml-auto text-[11px] text-slate-300">${flow.confidence < 80 ? '建议转专家复核' : '可直接采信'}</span>
+      </div>
+      ${flow.complex ? `
+      <div class="mt-3 rounded-xl bg-amber-50 border border-amber-100 p-3 flex items-start gap-2">
+        <span class="text-amber-600 flex-none mt-[1px]">${icon('<path d="M12 9v4M12 16.5v.2M10.3 3.9L2.5 18a2 2 0 001.7 3h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>', 15)}</span>
+        <p class="text-[12.5px] leading-6 text-amber-900">该情形涉及举证与赔偿认定，已为你匹配领域专家，可在右侧直接发起深度服务。</p>
+      </div>` : ''}
+    `);
+    updateMatch(flow);
+  }, 900);
+}
+
+/* 专家匹配面板 */
+function updateMatch(flow) {
+  $('#match-intent').textContent = flow.intent;
+
+  // 依据意图给专家重排序（含“竞业/争议”→争议解决优先，含“加班”→合规优先）
+  let pool = DATA.experts.slice();
+  const it = flow.intent;
+  const score = e => {
+    let s = e.pct;
+    if (it.indexOf('竞业') >= 0 && e.domains.join('').indexOf('竞业') >= 0) s += 20;
+    if (it.indexOf('试用期') >= 0 && e.domains.join('').indexOf('试用期') >= 0) s += 20;
+    if (it.indexOf('加班') >= 0 && e.domains.join('').indexOf('合规') >= 0) s += 8;
+    return s;
+  };
+  pool.sort((a, b) => score(b) - score(a));
+
+  $('#match-list').innerHTML = pool.slice(0, 3).map((e, i) => `
+    <div class="rounded-xl border border-[#eef1f7] hover:border-brand-200 transition p-4 ${i === 0 ? 'bg-brand-50/40 border-brand-200' : ''}">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-sky-400 flex items-center justify-center text-white text-[13px] font-semibold flex-none">${e.name.slice(0, 1)}</div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[13.5px] font-medium">${e.name}</span>
+            ${i === 0 ? '<span class="tag bg-brand-600 text-white">最佳匹配</span>' : ''}
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1">${e.role} · 从业 ${e.years} 年</div>
+        </div>
+        <div class="text-right flex-none">
+          <div class="text-[13px] font-semibold text-brand-700">${Math.min(99, Math.round(score(e) / 1.1))}%</div>
+          <div class="text-[10px] text-slate-400">契合度</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mt-3">
+        ${e.domains.map(d => `<span class="tag bg-white text-slate-500 border border-[#eef1f7]">${d}</span>`).join('')}
+        <span class="tag bg-white text-slate-500 border border-[#eef1f7]">评分 ${e.score}</span>
+      </div>
+    </div>`).join('');
+
+  $('#match-cta').disabled = false;
+}
+
+/* ---------- 报告生成 ---------- */
+const RPT_STEPS = ['正在解析案情要素…', '正在匹配属地政策与法条…', '正在检索同类裁判倾向…', '正在生成风险点与处置建议…', '正在排版输出…'];
+
+function generateReport() {
+  const btn = $('#rpt-gen');
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+  $('#rpt-progress').classList.remove('hidden');
+
+  let p = 0;
+  const timer = setInterval(() => {
+    p += Math.random() * 14 + 6;
+    if (p >= 100) p = 100;
+    $('#rpt-pct').textContent = Math.round(p) + '%';
+    $('#rpt-bar').style.width = p + '%';
+    $('#rpt-step').textContent = RPT_STEPS[Math.min(RPT_STEPS.length - 1, Math.floor(p / 20))];
+    if (p >= 100) {
+      clearInterval(timer);
+      setTimeout(() => {
+        renderReport();
+        btn.disabled = false;
+        btn.textContent = '重新生成报告';
+        $('#rpt-progress').classList.add('hidden');
+        $('#rpt-bar').style.width = '0%';
+        $('#rpt-pct').textContent = '0%';
+      }, 320);
+    }
+  }, 240);
+}
+
+function renderReport() {
+  const city = $('#rpt-city').value;
+  const scene = $('#rpt-scene').value;
+  const tplName = (DATA.reportTpls.find(t => t.on) || DATA.reportTpls[0]).name;
+  const today = '2026 年 10 月 8 日';
+
+  $('#report-holder').className = 'rise rounded-2xl bg-white border border-[#e5e8f0] overflow-hidden';
+  $('#report-holder').innerHTML = `
+    <div id="report-paper" class="p-9 print:p-0">
+      <!-- 报告头 -->
+      <div class="flex items-start justify-between pb-6 border-b-2 border-brand-900">
+        <div>
+          <div class="text-[12px] text-slate-400 mb-2">外服法务通 · AI 生成</div>
+          <h2 class="text-[21px] font-semibold text-ink leading-snug">${tplName}</h2>
+          <div class="text-[12px] text-slate-400 mt-2">用工所在地：${city}　|　生成日期：${today}　|　报告编号：FSG-LR-20261008-0417</div>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-brand-900 flex items-center justify-center text-white flex-none">
+          ${icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/><path d="M9.2 12.2l2 2 3.6-4"/>', 24)}
+        </div>
+      </div>
+
+      <!-- 案情摘要 -->
+      <div class="mt-6">
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-brand-500"></span>一、案情摘要</h3>
+        <div class="rounded-xl bg-slate-50 border border-[#eef1f7] p-4 text-[13px] leading-7 text-slate-700">${scene}</div>
+      </div>
+
+      <!-- 风险点 -->
+      <div class="mt-6">
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-rose-500"></span>二、风险点清单</h3>
+        <table class="w-full text-[12.5px] border border-[#e5e8f0] rounded-lg overflow-hidden">
+          <thead class="bg-slate-50 text-slate-500">
+            <tr>
+              <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0] w-[52px]">序号</th>
+              <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0]">风险点</th>
+              <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0] w-[92px]">等级</th>
+              <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0] w-[160px]">依据</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${[
+              ['未书面告知录用条件并签收', '高', '《劳动合同法》第 21 条'],
+              ['考核标准缺乏客观量化记录', '高', '粤高法〔2017〕147 号'],
+              ['解除决定送达时间临近试用期届满', '中', '《劳动合同法》第 39 条'],
+              ['未履行工会（职工代表）告知程序', '中', '《劳动合同法》第 43 条'],
+              ['赔偿测算未考虑 2N 风险敞口', '高', '《劳动合同法》第 87 条']
+            ].map((r, i) => {
+              const L = LEVEL_STYLE[r[1]];
+              return `<tr class="${i % 2 ? 'bg-white' : 'bg-slate-50/40'}">
+                <td class="px-3 py-2.5 text-slate-400">${i + 1}</td>
+                <td class="px-3 py-2.5 text-slate-700">${r[0]}</td>
+                <td class="px-3 py-2.5"><span class="tag ${L.bg} ${L.text} border ${L.border}">${r[1]}</span></td>
+                <td class="px-3 py-2.5 text-slate-500">${r[2]}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 结论 -->
+      <div class="mt-6">
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-amber-500"></span>三、结论与测算</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="rounded-xl border border-rose-100 bg-rose-50/60 p-4">
+            <div class="text-[12px] text-rose-700 mb-1">解除合法性结论</div>
+            <div class="text-[15px] font-semibold text-rose-700">高风险 · 拟认定违法解除</div>
+          </div>
+          <div class="rounded-xl border border-[#e5e8f0] p-4">
+            <div class="text-[12px] text-slate-500 mb-1">违法解除赔偿（2N 测算）</div>
+            <div class="text-[15px] font-semibold text-ink">￥12,000</div>
+          </div>
+          <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+            <div class="text-[12px] text-emerald-700 mb-1">协商解除成本（N+1）</div>
+            <div class="text-[15px] font-semibold text-emerald-700">￥18,000 <span class="text-[11px] font-normal">（含代通知金）</span></div>
+          </div>
+        </div>
+        <p class="text-[13px] leading-7 text-slate-700 mt-4">
+          在现有证据条件下，直接以“试用期考核不合格”解除，被认定为违法解除的概率约 <b>68%</b>。建议优先采取协商解除路径：由公司提出并与员工协商一致解除，支付经济补偿，整体成本可控且无诉讼风险；若员工不接受，再评估补正录用条件签收件与量化考核记录的可行性。
+        </p>
+      </div>
+
+      <!-- 处置建议 -->
+      <div class="mt-6">
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-emerald-500"></span>四、处置建议与时间节点</h3>
+        <div class="space-y-2.5">
+          ${[
+            ['T+0', '立即冻结解除流程，避免形成不可逆的解除事实'],
+            ['T+1', '调取劳动合同、录用条件告知书、考核记录等现有证据，完成证据清单'],
+            ['T+2', '测算协商解除方案并出具沟通口径，由 HR 与员工首次沟通'],
+            ['T+3～T+5', '达成一致后签署解除协议，明确金额、时间与争议终局条款'],
+            ['T+7', '办理退工、档案转移与社保停缴，出具离职证明']
+          ].map(r => `
+            <div class="flex gap-3 items-start">
+              <span class="tag bg-brand-50 text-brand-700 border border-brand-100 flex-none w-[62px] justify-center">${r[0]}</span>
+              <p class="text-[13px] leading-6 text-slate-700 pt-0.5">${r[1]}</p>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- 落款 -->
+      <div class="mt-8 pt-5 border-t border-[#e5e8f0] flex items-end justify-between">
+        <div class="text-[11px] text-slate-400 leading-6">
+          本报告由「外服法务通」AI 引擎自动生成，匹配 512 城属地政策库与 1,286 份类案。<br/>
+          内容仅供参考，重大决策建议由领域专家复核后执行。
+        </div>
+        <div class="text-[12px] text-slate-500 text-right">
+          复核专家：冯洁妍<br/>上海外服广东公司 · 智法先锋
+        </div>
+      </div>
+
+      <!-- 操作条 -->
+      <div class="mt-6 pt-5 border-t border-[#e5e8f0] flex flex-wrap gap-3 no-print">
+        <button onclick="window.print()" class="h-10 px-5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-[13px] font-medium transition">导出 / 打印 PDF</button>
+        <button class="h-10 px-5 rounded-xl bg-white border border-[#e5e8f0] text-[13px] text-slate-600 hover:border-brand-300 hover:text-brand-700 transition">推送至专家复核</button>
+        <button class="h-10 px-5 rounded-xl bg-white border border-[#e5e8f0] text-[13px] text-slate-600 hover:border-brand-300 hover:text-brand-700 transition">归档至客户空间</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- 专家页 ---------- */
+function renderExperts() {
+  // 流程步骤
+  $('#flow-steps').innerHTML = DATA.flowSteps.map((s, i) => `
+    <div class="rise relative rounded-xl border border-[#eef1f7] p-4 ${s.state === 'now' ? 'border-brand-300 bg-brand-50/40' : ''}" style="animation-delay:${i * 0.06}s">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold ${s.state === 'todo' ? 'bg-slate-100 text-slate-400' : 'bg-brand-600 text-white'}">${s.step}</span>
+        <span class="text-[13.5px] font-medium">${s.title}</span>
+        ${s.state === 'done' ? `<span class="ml-auto text-emerald-500">${icon('<path d="M5 12l4 4L19 6"/>', 14)}</span>` : ''}
+        ${s.state === 'now' ? '<span class="ml-auto tag bg-brand-600 text-white">进行中</span>' : ''}
+      </div>
+      <p class="text-[12.5px] leading-6 text-slate-500">${s.desc}</p>
+      ${i < DATA.flowSteps.length - 1 ? '<span class="hidden md:block absolute -right-[13px] top-1/2 -translate-y-1/2 text-slate-300 z-10">›</span>' : ''}
+    </div>`).join('');
+
+  // 专家卡片
+  $('#expert-grid').innerHTML = DATA.experts.map(e => `
+    <div class="rounded-xl border border-[#eef1f7] hover:border-brand-200 hover:shadow-[0_2px_10px_rgba(16,24,40,.05)] transition p-4">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-full bg-gradient-to-br from-brand-500 to-sky-400 flex items-center justify-center text-white text-[14px] font-semibold flex-none">${e.name.slice(0, 1)}</div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[14px] font-medium">${e.name}</span>
+            <span class="text-[11px] text-amber-500 font-medium">★ ${e.score}</span>
+          </div>
+          <div class="text-[11.5px] text-slate-400 mt-1 truncate">${e.role}</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mt-3 text-center">
+        <div class="rounded-lg bg-slate-50 py-2">
+          <div class="text-[14px] font-semibold text-ink">${e.years}<span class="text-[11px] font-normal text-slate-400"> 年</span></div>
+          <div class="text-[10.5px] text-slate-400 mt-0.5">从业年限</div>
+        </div>
+        <div class="rounded-lg bg-slate-50 py-2">
+          <div class="text-[14px] font-semibold text-ink">${e.orders}</div>
+          <div class="text-[10.5px] text-slate-400 mt-0.5">累计服务</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mt-3">
+        ${e.domains.map(d => `<span class="tag bg-brand-50 text-brand-700 border border-brand-100">${d}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+/* ---------- 项目概况页 ---------- */
+function renderAbout() {
+  $('#about-meta').innerHTML = DATA.aboutMeta.map(m => `
+    <div>
+      <div class="text-[11px] text-white/50 mb-1">${m.k}</div>
+      <div class="text-[15px] font-semibold">${m.v}</div>
+    </div>`).join('');
+
+  $('#milestones').innerHTML = DATA.milestones.map(m => `
+    <div class="flex gap-4">
+      <div class="tl-dot ${m.done ? 'is-done' : ''}">${m.done ? '✓' : m.id.replace('M', '')}</div>
+      <div class="pb-5 flex-1">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[14px] font-medium">${m.title}</span>
+          <span class="tag bg-slate-100 text-slate-500">${m.date}</span>
+          ${m.done ? '<span class="tag bg-emerald-50 text-emerald-700 border border-emerald-100">已完成</span>' : ''}
+        </div>
+        <p class="text-[12.5px] leading-6 text-slate-500 mt-2">${m.desc}</p>
+      </div>
+    </div>`).join('');
+
+  $('#leaps').innerHTML = DATA.leaps.map(l => `
+    <div class="rounded-xl border ${l.color === 'brand' ? 'border-brand-200 bg-brand-50/40' : 'border-violet-200 bg-violet-50/40'} p-5">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-[14px] font-semibold ${l.color === 'brand' ? 'text-brand-800' : 'text-violet-800'}">${l.tag}</span>
+        <span class="tag bg-white text-slate-500 border border-[#e5e8f0] ml-auto">建议周期 ${l.period}</span>
+      </div>
+      <div class="mt-4 space-y-2">
+        ${l.focus.map(f => `
+          <div class="flex gap-2 items-start">
+            <span class="${l.color === 'brand' ? 'text-brand-500' : 'text-violet-500'} flex-none mt-[3px]">${icon('<path d="M5 12l4 4L19 6"/>', 13)}</span>
+            <span class="text-[13px] leading-6 text-slate-700">${f}</span>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+/* ==============================================================
+   ③ EVENTS —— 交互逻辑区
+   ============================================================== */
+
+/* 页面切换 */
+function goPage(name) {
+  $$('.page').forEach(p => p.classList.toggle('is-active', p.id === 'page-' + name));
+  $$('.nav-item').forEach(n => n.classList.toggle('is-active', n.dataset.page === name));
+  const cur = $('#page-' + name);
+  if (cur) {
+    $('#page-title').textContent = cur.dataset.title || '';
+    $('#page-sub').textContent = cur.dataset.sub || '';
+  }
+  $('#viewport').scrollTop = 0;
+}
+
+function bindEvents() {
+  /* --- 导航 --- */
+  $$('.nav-item').forEach(btn => btn.addEventListener('click', () => goPage(btn.dataset.page)));
+
+  /* --- 工作台 --- */
+  $('#risk-btn').addEventListener('click', runRiskCheck);
+  $('#risk-input').addEventListener('keydown', e => { if (e.key === 'Enter') runRiskCheck(); });
+  document.addEventListener('click', e => {
+    const jump = e.target.closest('[data-risk-jump]');
+    if (jump) goPage(jump.dataset.riskJump);
+  });
+
+  /* --- 法规查询 --- */
+  document.addEventListener('click', e => {
+    const c = e.target.closest('[data-law-city]');
+    if (c) { lawCity = c.dataset.lawCity; renderLawCities(); renderLaw(); }
+    const q = e.target.closest('[data-law-quick]');
+    if (q) { $('#law-query').value = q.dataset.lawQuick; renderLaw(); }
+  });
+  $('#law-btn').addEventListener('click', renderLaw);
+  $('#law-query').addEventListener('keydown', e => { if (e.key === 'Enter') renderLaw(); });
+  document.addEventListener('change', e => {
+    if (e.target.classList.contains('law-check')) updateLawProgress();
+  });
+
+  /* --- 类案检索 --- */
+  $('#case-btn').addEventListener('click', renderCases);
+  $('#case-query').addEventListener('keydown', e => { if (e.key === 'Enter') renderCases(); });
+  document.addEventListener('click', e => {
+    const y = e.target.closest('[data-case-year]');
+    if (y) { caseYear = y.dataset.caseYear; $$('[data-case-year]').forEach(x => x.classList.toggle('is-on', x === y)); renderCases(); }
+    const l = e.target.closest('[data-case-level]');
+    if (l) { caseLevel = l.dataset.caseLevel; $$('[data-case-level]').forEach(x => x.classList.toggle('is-on', x === l)); renderCases(); }
+  });
+
+  /* --- 智能咨询 --- */
+  $('#chat-quick').innerHTML = DATA.chatQuick.map(q =>
+    `<span class="chip px-3 py-1.5 rounded-full text-[12.5px]" data-chat-quick="${q}">${q}</span>`).join('');
+  document.addEventListener('click', e => {
+    const q = e.target.closest('[data-chat-quick]');
+    if (q) askChat(q.dataset.chatQuick);
+  });
+  const send = () => {
+    const v = $('#chat-input').value.trim();
+    if (!v) return;
+    $('#chat-input').value = '';
+    askChat(v);
+  };
+  $('#chat-send').addEventListener('click', send);
+  $('#chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+  $('#match-cta').addEventListener('click', () => {
+    if ($('#match-cta').disabled) return;
+    $('#match-cta').textContent = '已派单 · 专家将在 30 分钟内响应';
+    $('#match-cta').classList.add('bg-emerald-600', 'hover:bg-emerald-600');
+    setTimeout(() => {
+      $('#match-cta').textContent = '一键直连专家';
+      $('#match-cta').classList.remove('bg-emerald-600', 'hover:bg-emerald-600');
+    }, 2600);
+  });
+
+  /* --- 报告模板选择 --- */
+  $('#rpt-tpl').innerHTML = DATA.reportTpls.map((t, i) => `
+    <button class="w-full text-left rounded-xl border p-3 transition ${t.on ? 'border-brand-300 bg-brand-50/50' : 'border-[#eef1f7] hover:border-brand-200'}" data-rpt-tpl="${t.id}" data-rpt-idx="${i}">
+      <div class="flex items-center gap-2">
+        <span class="text-[13.5px] font-medium ${t.on ? 'text-brand-800' : 'text-slate-700'}">${t.name}</span>
+        ${t.on ? `<span class="ml-auto text-brand-600">${icon('<path d="M5 12l4 4L19 6"/>', 14)}</span>` : ''}
+      </div>
+      <div class="text-[11.5px] text-slate-400 mt-1">${t.desc}</div>
+    </button>`).join('');
+
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-rpt-tpl]');
+    if (!t) return;
+    const idx = Number(t.dataset.rptIdx);
+    DATA.reportTpls.forEach((x, i) => x.on = i === idx);
+    $('#rpt-tpl').innerHTML = DATA.reportTpls.map((x, i) => `
+      <button class="w-full text-left rounded-xl border p-3 transition ${x.on ? 'border-brand-300 bg-brand-50/50' : 'border-[#eef1f7] hover:border-brand-200'}" data-rpt-tpl="${x.id}" data-rpt-idx="${i}">
+        <div class="flex items-center gap-2">
+          <span class="text-[13.5px] font-medium ${x.on ? 'text-brand-800' : 'text-slate-700'}">${x.name}</span>
+          ${x.on ? `<span class="ml-auto text-brand-600">${icon('<path d="M5 12l4 4L19 6"/>', 14)}</span>` : ''}
+        </div>
+        <div class="text-[11.5px] text-slate-400 mt-1">${x.desc}</div>
+      </button>`).join('');
+  });
+
+  $('#rpt-gen').addEventListener('click', generateReport);
+}
+
+/* ---------- 初始化 ---------- */
+function init() {
+  renderDashboard();
+  renderLawCities();
+  renderLaw();
+  renderCases();
+  renderExperts();
+  renderAbout();
+  bindEvents();
+
+  // 首屏欢迎语
+  setTimeout(() => {
+    pushMsg('ai', `
+      <div class="text-[13.5px] leading-7 text-slate-700">
+        你好，我是<b class="font-semibold text-ink">外服法务通</b>智能助手。<br/>
+        我可以帮你做四件事：查属地政策、检索同类裁判、解答用工疑问、生成法律分析报告。
+      </div>
+      <div class="mt-3 rounded-xl bg-brand-50 border border-brand-100 p-3 text-[12.5px] leading-6 text-brand-900">
+        已接入 <b>512 城</b>属地政策库、<b>1,286 份</b>劳动争议类案。<br/>
+        复杂问题会自动匹配领域专家，一键直达。
+      </div>
+      <div class="flex items-center gap-3 mt-3">
+        <span class="text-[11px] text-slate-400">AI 置信度</span>
+        <div class="stat-bar w-[110px]"><i style="width:99%;background:linear-gradient(90deg,#2563eb,#38bdf8)"></i></div>
+        <span class="text-[11px] font-semibold text-brand-700">99%</span>
+      </div>
+    `);
+    updateMatch({ intent: '等待新的咨询意图识别…' });
+    $('#match-cta').disabled = true;
+  }, 300);
+
+  // 工作台首屏自动跑一次体检，便于演示
+  setTimeout(runRiskCheck, 700);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
