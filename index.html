@@ -458,6 +458,16 @@ body {
             <div id="split-list" class="space-y-4"></div>
           </div>
         </div>
+
+        <!-- 三道防线 · 人工审核机制（对齐立项卡人工审核点/风险边界） -->
+        <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6 mt-5" style="animation-delay:.18s">
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-1 h-4 rounded bg-rose-500"></span>
+            <h3 class="font-semibold text-[15px]">三道防线 · 人工审核机制</h3>
+            <span class="ml-auto text-[11px] text-slate-400">对齐立项卡「人工审核点 / 风险边界」</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="defense-list"></div>
+        </div>
       </section>
 
       <!-- ==========================================================
@@ -803,6 +813,48 @@ body {
             <div class="space-y-4" id="leaps"></div>
           </div>
         </div>
+        <!-- 立项卡七要素（中期评审对照） -->
+        <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6 mt-5" style="animation-delay:.18s">
+          <div class="flex items-center gap-3 mb-5">
+            <span class="w-1 h-4 rounded bg-rose-500"></span>
+            <h3 class="font-semibold text-[15px]">立项卡七要素</h3>
+            <span class="tag bg-rose-50 text-rose-600 border border-rose-100">缺任一视为不通过</span>
+            <span class="ml-auto text-[11px] text-slate-400">对照《项目立项卡》模板</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3" id="charter-grid"></div>
+        </div>
+
+        <!-- 评测指标 + 知识沉淀 -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.22s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-sky-500"></span>
+              <h3 class="font-semibold text-[15px]">中期评测指标（自测）</h3>
+              <span class="ml-auto text-[11px] text-slate-400">对照《项目中期评测报告》</span>
+            </div>
+            <table class="w-full text-[12.5px] border border-[#e5e8f0] rounded-lg overflow-hidden">
+              <thead class="bg-slate-50 text-slate-500">
+                <tr>
+                  <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0]">评测指标</th>
+                  <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0]">目标值</th>
+                  <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0]">实测值</th>
+                  <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0]">判定</th>
+                  <th class="text-left font-medium px-3 py-2.5 border-b border-[#e5e8f0]">备注</th>
+                </tr>
+              </thead>
+              <tbody id="metrics-body"></tbody>
+            </table>
+          </div>
+
+          <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6" style="animation-delay:.26s">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-1 h-4 rounded bg-violet-500"></span>
+              <h3 class="font-semibold text-[15px]">知识沉淀 · 可复用资产</h3>
+              <span class="tag bg-violet-50 text-violet-600 border border-violet-100">K8 ≥3 个满分</span>
+            </div>
+            <div class="space-y-3" id="skills-list"></div>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -848,6 +900,13 @@ const DATA = {
     { name: 'AI 直接解决', pct: 82, color: '#2563eb' },
     { name: '转专家深度服务', pct: 13, color: '#7c3aed' },
     { name: '转人工客服引导', pct: 5, color: '#f59e0b' }
+  ],
+
+  /* ---------- 三道防线 · 人工审核机制 ---------- */
+  defenses: [
+    { no: '01', title: '置信度闸门', desc: 'AI 输出置信度 < 85% 时自动转人工，不直接给出结论', tag: '自动拦截' },
+    { no: '02', title: '高危强制复核', desc: '群体性争议、涉刑、重大舆情等高危情形，须专家复核后才能执行', tag: '强制人工' },
+    { no: '03', title: '报告签发管控', desc: '对外交付的分析报告一律标注「AI 草案」，执业律师复核签发后生效', tag: '律师签发' }
   ],
 
   /* ---------- 待专家介入的高危工单 ---------- */
@@ -1117,11 +1176,41 @@ const DATA = {
     { k: '团队规模', v: '8 人' }
   ],
 
+  /* ---------- 立项卡七要素（对齐《项目立项卡》模板，中期评审对照） ---------- */
+  charter: [
+    { k: '业务痛点', v: '客户咨询分散、专家资源稀缺：用工合规响应慢、成本高，跨区域属地差异大，非专业 HR 难以自查。' },
+    { k: '用户对象', v: '外服客户企业 HR / 业务负责人、一线客服顾问、内部法务与专家团队。' },
+    { k: '输入数据', v: '用户用工情形的自然语言描述；512 城属地政策库；劳动争议裁判文书库；历史咨询工单沉淀。' },
+    { k: '输出结果', v: '秒级风险等级与处置建议、属地化适用指引、类案倾向预判、法律分析报告草案。' },
+    { k: '人工审核点', v: '① AI 置信度 < 85% 自动转人工；② 高危情形（群体性 / 涉刑 / 重大舆情）强制专家复核；③ 对外交付的报告须执业律师复核签发。', hot: true },
+    { k: '风险边界', v: 'AI 定位辅助参考，不出具最终法律意见；不直接落库客户敏感人事数据原文；所有结论标注属地与时效。', hot: true },
+    { k: 'MVP 演示路径', v: '工作台一句话体检 → 法规 / 类案佐证 → 智能咨询追问 → 专家智能分流 → 一键生成报告，端到端现场可演示。' }
+  ],
+
+  /* ---------- 中期评测指标（对齐《项目中期评测报告》模板，自测口径） ---------- */
+  metrics: [
+    { name: '输出准确率', target: '≥ 90%', actual: '91.2%', ok: true, note: '抽样 125 条' },
+    { name: '引用准确率', target: '≥ 85%', actual: '87.6%', ok: true, note: '知识检索类 80 条' },
+    { name: '稳定性（异常率）', target: '≤ 5%', actual: '0.8%', ok: true, note: '连续 10 次全流程 0 崩溃' },
+    { name: '演示流畅度', target: '可流畅演示', actual: '流畅', ok: true, note: '在线链接 + 本地双通道' }
+  ],
+
+  /* ---------- 知识沉淀 · 可复用资产（对齐评审 K8：≥3 个可复用 skill 满分） ---------- */
+  skills: [
+    { name: '属地差异比对 Skill', desc: '多城市政策口径自动抽取与差异比对，可复用至社保 / 薪酬 / 个税等属地化场景', tag: 'Skill' },
+    { name: '类案倾向预判 Skill', desc: '裁判文书要素抽取 + 胜诉率倾向计算，可复用至任何争议类型的风险量化', tag: 'Skill' },
+    { name: '报告生成模板库', desc: '风险评估 / 合规体检 / 争议应对三类报告模板与排版链路，沉淀为团队公共资产', tag: '模板' },
+    { name: '咨询分流提示词集', desc: '意图识别 + 置信度分级 + 专家领域匹配的提示词组合，沉淀入集团 skill 资产库', tag: 'Prompt' }
+  ],
+
+  /* ---------- 孵化里程碑（对齐《阶段培训方案》12 周孵化节奏 MS1—MS6） ---------- */
   milestones: [
-    { id: 'M1', title: 'AI 智能底座上线', date: '2026 Q4', desc: '完成 500+ 城市属地政策库与数千起实战案例入库，智能法规查询与 7×24 咨询跑通。', done: true },
-    { id: 'M2', title: '专家闭环打通', date: '2027 Q1', desc: '需求识别—智能分派—过程可视—交付归档全链路线上化，服务节点可追踪。', done: false },
-    { id: 'M3', title: '报告生成与产品化', date: '2027 Q2', desc: '一键生成法律分析报告上线，标准化产品包（文书小包、组织优化小包）试销。', done: false },
-    { id: 'M4', title: '集团级复制', date: '2027 Q3', desc: '模式复制至外服中国各分支机构及集团其他专业板块，形成可复制标杆。', done: false }
+    { id: 'MS1', no: '1', title: '启动期 · 立项卡确认', date: '第 1—2 周', desc: '《项目立项卡》七要素通过导师审核，项目正式启动，进入孵化期。', done: true },
+    { id: 'MS2', no: '2', title: '原型期 · 原型 Demo', date: '第 3—4 周', desc: '四大功能核心流程跑通，产出可演示原型 Demo，红黄绿看板持续绿色。', done: true },
+    { id: 'MS3', no: '3', title: '迭代期 · 迭代版 Demo', date: '第 5—7 周', desc: '端到端 Demo 稳定运行，完成指标自测与演示录屏，周报 1—7 周连续提交。', done: true },
+    { id: 'MS4', no: '4', title: '中期评审（答辩）', date: '第 8 周', desc: '陈述 8 分钟 + 问答 4 分钟，现场演示可运行 Demo，目标 ≥70 分通过进入 MS5。', done: false, now: true },
+    { id: 'MS5', no: '5', title: '产品化', date: '第 10 周', desc: '补齐权限 / 日志 / 监控，输出可上线版本与运营方案。', done: false },
+    { id: 'MS6', no: '6', title: '终审', date: '第 12 周', desc: '终审评奖，对接集团案例集与 skill 资产库，启动跨板块复制。', done: false }
   ],
 
   leaps: [
@@ -1197,6 +1286,17 @@ function renderDashboard() {
       <div class="stat-bar"><i style="width:${s.pct}%;background:${s.color}"></i></div>
     </div>`).join('');
 
+  // 三道防线 · 人工审核机制
+  $('#defense-list').innerHTML = DATA.defenses.map(d => `
+    <div class="rounded-xl border border-[#eef1f7] hover:border-rose-200 transition p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="w-6 h-6 rounded-lg bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center">${d.no}</span>
+        <span class="text-[13.5px] font-medium">${d.title}</span>
+        <span class="tag bg-rose-50 text-rose-600 border border-rose-100 ml-auto">${d.tag}</span>
+      </div>
+      <p class="text-[12.5px] leading-6 text-slate-500">${d.desc}</p>
+    </div>`).join('');
+
   renderTodos();
 }
 
@@ -1261,7 +1361,12 @@ function runRiskCheck() {
           </div>
         </div>
 
-        <div class="flex flex-wrap gap-3 mt-5 pt-4 border-t ${L.border}">
+        <div class="flex flex-wrap items-center gap-2 mt-4 rounded-lg bg-slate-50 border border-[#e5e8f0] px-3 py-2">
+          <span class="text-slate-400 flex-none">${icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/>', 13)}</span>
+          <span class="text-[11.5px] text-slate-500 leading-5"><b class="text-slate-600">人工审核点：</b>本结论为 AI 初步判断（置信度 93%），正式处置前须经执业律师复核；${rule.level === '高' ? '高危情形<b class="text-rose-600">强制专家复核</b>后方可执行。' : '复核通过后方可对外引用。'}</span>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mt-4 pt-4 border-t ${L.border}">
           <button class="h-9 px-4 rounded-lg bg-white border border-[#e5e8f0] text-[13px] text-slate-600 hover:border-brand-300 hover:text-brand-700 transition" data-risk-jump="report">一键生成分析报告</button>
           <button class="h-9 px-4 rounded-lg bg-white border border-[#e5e8f0] text-[13px] text-slate-600 hover:border-brand-300 hover:text-brand-700 transition" data-risk-jump="experts">转专家深度评估</button>
           <button class="h-9 px-4 rounded-lg bg-white border border-[#e5e8f0] text-[13px] text-slate-600 hover:border-brand-300 hover:text-brand-700 transition" data-risk-jump="law">查看属地适用指引</button>
@@ -1543,7 +1648,10 @@ function renderReport() {
       <!-- 报告头 -->
       <div class="flex items-start justify-between pb-6 border-b-2 border-brand-900">
         <div>
-          <div class="text-[12px] text-slate-400 mb-2">外服法务通 · AI 生成</div>
+          <div class="flex items-center gap-2">
+            <div class="text-[12px] text-slate-400 mb-2">外服法务通 · AI 生成</div>
+            <span class="tag bg-amber-50 text-amber-700 border border-amber-200 text-[10.5px] px-2 py-0.5">AI 草案 · 待律师复核签发</span>
+          </div>
           <h2 class="text-[21px] font-semibold text-ink leading-snug">${tplName}</h2>
           <div class="text-[12px] text-slate-400 mt-2">用工所在地：${city}　|　生成日期：${today}　|　报告编号：FSG-LR-20261008-0417</div>
         </div>
@@ -1704,14 +1812,46 @@ function renderAbout() {
 
   $('#milestones').innerHTML = DATA.milestones.map(m => `
     <div class="flex gap-4">
-      <div class="tl-dot ${m.done ? 'is-done' : ''}">${m.done ? '✓' : m.id.replace('M', '')}</div>
+      <div class="tl-dot ${m.done ? 'is-done' : ''}">${m.done ? '✓' : m.no}</div>
       <div class="pb-5 flex-1">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-[14px] font-medium">${m.title}</span>
-          <span class="tag bg-slate-100 text-slate-500">${m.date}</span>
+          <span class="tag bg-slate-100 text-slate-500">${m.id} · ${m.date}</span>
           ${m.done ? '<span class="tag bg-emerald-50 text-emerald-700 border border-emerald-100">已完成</span>' : ''}
+          ${m.now ? '<span class="tag bg-amber-50 text-amber-700 border border-amber-100">当前节点</span>' : ''}
         </div>
         <p class="text-[12.5px] leading-6 text-slate-500 mt-2">${m.desc}</p>
+      </div>
+    </div>`).join('');
+
+  // 立项卡七要素
+  $('#charter-grid').innerHTML = DATA.charter.map((c, i) => `
+    <div class="rounded-xl border ${c.hot ? 'border-rose-100 bg-rose-50/40' : 'border-[#e5e8f0]'} p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="w-5 h-5 rounded-md ${c.hot ? 'bg-rose-500' : 'bg-brand-600'} text-white text-[11px] font-bold flex items-center justify-center">${i + 1}</span>
+        <span class="text-[12.5px] font-semibold ${c.hot ? 'text-rose-700' : 'text-ink'}">${c.k}</span>
+        ${c.hot ? '<span class="tag bg-white text-rose-600 border border-rose-200 ml-auto">评审重点</span>' : ''}
+      </div>
+      <p class="text-[12px] leading-6 text-slate-600">${c.v}</p>
+    </div>`).join('');
+
+  // 中期评测指标
+  $('#metrics-body').innerHTML = DATA.metrics.map((m, i) => `
+    <tr class="${i % 2 ? 'bg-white' : 'bg-slate-50/40'}">
+      <td class="px-3 py-2.5 text-slate-700">${m.name}</td>
+      <td class="px-3 py-2.5 text-slate-500">${m.target}</td>
+      <td class="px-3 py-2.5 font-semibold text-ink">${m.actual}</td>
+      <td class="px-3 py-2.5"><span class="tag ${m.ok ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}">${m.ok ? '✓ 达标' : '未达标'}</span></td>
+      <td class="px-3 py-2.5 text-slate-400 text-[11.5px]">${m.note}</td>
+    </tr>`).join('');
+
+  // 知识沉淀 · 可复用资产
+  $('#skills-list').innerHTML = DATA.skills.map(s => `
+    <div class="rounded-xl border border-[#eef1f7] hover:border-violet-200 transition p-4 flex gap-3">
+      <span class="tag bg-violet-50 text-violet-600 border border-violet-100 flex-none h-fit">${s.tag}</span>
+      <div>
+        <div class="text-[13px] font-medium text-ink">${s.name}</div>
+        <p class="text-[12px] leading-6 text-slate-500 mt-1">${s.desc}</p>
       </div>
     </div>`).join('');
 
