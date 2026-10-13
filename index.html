@@ -473,15 +473,32 @@ body {
       <!-- ==========================================================
            页面 2：智能法规查询（增强版 · 本地化适用指引）
            ========================================================== -->
-      <section id="page-law" class="page" data-title="智能法规查询增强版" data-sub="512 城属地政策库 · 输出“本地化适用指引”而非单纯法条">
+      <section id="page-law" class="page" data-title="智能法规查询增强版" data-sub="目标 512 城属地政策库（演示已收录 58 城 · 6 城精编口径）· 输出“本地化适用指引”而非单纯法条">
 
         <div class="rise rounded-2xl bg-white border border-[#e5e8f0] p-6">
+          <!-- 用工所在地：可搜索选择器（中文 / 拼音首字母） -->
           <div class="flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-2">
-              <span class="text-[13px] text-slate-500">用工所在地</span>
-              <div id="law-cities" class="flex flex-wrap gap-2"></div>
+            <span class="text-[13px] text-slate-500 flex-none">用工所在地</span>
+
+            <div class="relative" id="law-city-picker">
+              <div class="flex items-center gap-2 h-11 pl-3 pr-2 rounded-xl border border-[#dde3ee] bg-slate-50/60 focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-50 transition">
+                <svg class="text-slate-400 flex-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                <input id="law-city-input" type="text" autocomplete="off" placeholder="输入城市名或拼音（长沙 / cs）"
+                  class="w-[200px] h-full bg-transparent text-[13.5px] outline-none placeholder:text-slate-400" />
+                <span id="law-city-cur" class="tag bg-brand-50 text-brand-700 border border-brand-100 flex-none">广州市</span>
+              </div>
+              <div id="law-city-drop" class="hidden absolute z-40 left-0 mt-2 w-[330px] max-h-[286px] overflow-auto rounded-xl border border-[#e5e8f0] bg-white shadow-[0_14px_34px_rgba(16,24,40,.14)] p-2"></div>
             </div>
+
+            <span class="text-[12px] text-slate-400">已收录 <b class="text-slate-600" id="law-city-count">0</b> 个主要用工城市</span>
+            <span class="ml-auto text-[11.5px] text-slate-400">也可直接在下方提问中写城市名，将自动切换所在地</span>
           </div>
+
+          <div class="flex flex-wrap items-center gap-2 mt-3 text-[12px]">
+            <span class="text-slate-400 mr-1">热门城市：</span>
+            <div id="law-hot" class="flex flex-wrap gap-2"></div>
+          </div>
+
           <div class="flex flex-wrap gap-3 mt-5">
             <div class="relative flex-1 min-w-[300px]">
               <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -984,9 +1001,113 @@ const DATA = {
     }
   ],
 
-  /* ---------- 智能法规查询：城市与属地化指引 ---------- */
-  lawCities: ['广州市', '上海市', '深圳市', '北京市', '杭州市', '成都市'],
+  /* ---------- 智能法规查询：全国城市库（支持中文 / 拼音首字母检索） ----------
+     n = 城市名  p = 所属省市  py = 拼音首字母缩写
+     覆盖 31 个省级行政区、58 个主要用工城市。
+     ------------------------------------------------------------------ */
+  lawCityLib: [
+    { n: '北京市', p: '北京市', py: 'bj' },
+    { n: '天津市', p: '天津市', py: 'tj' },
+    { n: '上海市', p: '上海市', py: 'sh' },
+    { n: '重庆市', p: '重庆市', py: 'cq' },
+    { n: '石家庄市', p: '河北省', py: 'sjz' },
+    { n: '唐山市', p: '河北省', py: 'ts' },
+    { n: '太原市', p: '山西省', py: 'ty' },
+    { n: '呼和浩特市', p: '内蒙古自治区', py: 'hhht' },
+    { n: '沈阳市', p: '辽宁省', py: 'sy' },
+    { n: '大连市', p: '辽宁省', py: 'dl' },
+    { n: '长春市', p: '吉林省', py: 'cc' },
+    { n: '哈尔滨市', p: '黑龙江省', py: 'heb' },
+    { n: '南京市', p: '江苏省', py: 'nj' },
+    { n: '苏州市', p: '江苏省', py: 'sz' },
+    { n: '无锡市', p: '江苏省', py: 'wx' },
+    { n: '常州市', p: '江苏省', py: 'cz' },
+    { n: '南通市', p: '江苏省', py: 'nt' },
+    { n: '徐州市', p: '江苏省', py: 'xz' },
+    { n: '杭州市', p: '浙江省', py: 'hz' },
+    { n: '宁波市', p: '浙江省', py: 'nb' },
+    { n: '温州市', p: '浙江省', py: 'wz' },
+    { n: '嘉兴市', p: '浙江省', py: 'jx' },
+    { n: '金华市', p: '浙江省', py: 'jh' },
+    { n: '合肥市', p: '安徽省', py: 'hf' },
+    { n: '芜湖市', p: '安徽省', py: 'wh' },
+    { n: '福州市', p: '福建省', py: 'fz' },
+    { n: '厦门市', p: '福建省', py: 'xm' },
+    { n: '泉州市', p: '福建省', py: 'qz' },
+    { n: '南昌市', p: '江西省', py: 'nc' },
+    { n: '济南市', p: '山东省', py: 'jn' },
+    { n: '青岛市', p: '山东省', py: 'qd' },
+    { n: '烟台市', p: '山东省', py: 'yt' },
+    { n: '潍坊市', p: '山东省', py: 'wf' },
+    { n: '郑州市', p: '河南省', py: 'zz' },
+    { n: '洛阳市', p: '河南省', py: 'ly' },
+    { n: '武汉市', p: '湖北省', py: 'wh' },
+    { n: '宜昌市', p: '湖北省', py: 'yc' },
+    { n: '长沙市', p: '湖南省', py: 'cs' },
+    { n: '株洲市', p: '湖南省', py: 'zz' },
+    { n: '广州市', p: '广东省', py: 'gz' },
+    { n: '深圳市', p: '广东省', py: 'sz' },
+    { n: '东莞市', p: '广东省', py: 'dg' },
+    { n: '佛山市', p: '广东省', py: 'fs' },
+    { n: '珠海市', p: '广东省', py: 'zh' },
+    { n: '中山市', p: '广东省', py: 'zs' },
+    { n: '惠州市', p: '广东省', py: 'hz' },
+    { n: '南宁市', p: '广西壮族自治区', py: 'nn' },
+    { n: '海口市', p: '海南省', py: 'hk' },
+    { n: '成都市', p: '四川省', py: 'cd' },
+    { n: '绵阳市', p: '四川省', py: 'my' },
+    { n: '贵阳市', p: '贵州省', py: 'gy' },
+    { n: '昆明市', p: '云南省', py: 'km' },
+    { n: '拉萨市', p: '西藏自治区', py: 'ls' },
+    { n: '西安市', p: '陕西省', py: 'xa' },
+    { n: '兰州市', p: '甘肃省', py: 'lz' },
+    { n: '西宁市', p: '青海省', py: 'xn' },
+    { n: '银川市', p: '宁夏回族自治区', py: 'yc' },
+    { n: '乌鲁木齐市', p: '新疆维吾尔自治区', py: 'wlmq' }
+  ],
 
+  /* 有精编属地指引的城市（下方 lawByCity 及各专题 cities 已逐条编写口径） */
+  lawFullCities: ['广州市', '上海市', '深圳市', '北京市', '杭州市', '成都市'],
+
+  /* 首页展示的热门城市 */
+  lawHotCities: ['广州市', '上海市', '北京市', '深圳市', '杭州市', '成都市', '南京市', '苏州市', '武汉市', '长沙市', '西安市', '重庆市'],
+
+  /* ---------- 省级裁审画像：未收录精编指引的城市，按所属省级画像推定 ---------- */
+  lawProvinceProfiles: {
+    '北京市': { s: '较严格', w: 38, trait: '强调解除时间节点的严格性与用人单位完整举证责任', focus: '解除事由的书面化与送达时点' },
+    '天津市': { s: '较严格', w: 40, trait: '对规章制度合法性链条审查完整，注重程序正当', focus: '制度依据与告知说明程序' },
+    '上海市': { s: '严格', w: 43, trait: '注重制度依据与民主程序，对程序瑕疵容忍度低', focus: '民主程序与公示留痕' },
+    '重庆市': { s: '适中', w: 40, trait: '裁审尺度相对平衡，重视双方实际履行与诚信原则', focus: '事实履行与证据完整性' },
+    '河北省': { s: '适中', w: 41, trait: '注重区域用工实践差异，对协商解除路径较为认可', focus: '协商解除与补偿合理性' },
+    '山西省': { s: '适中', w: 39, trait: '对规章制度公示要求较严，实务中倾向以调解方式化解', focus: '制度公示与调解优先' },
+    '内蒙古自治区': { s: '适中', w: 38, trait: '案件量相对较少，裁审更依赖国家法统一口径', focus: '国家法统一适用' },
+    '辽宁省': { s: '较严格', w: 40, trait: '辽中南地区对解除程序合规审查较细', focus: '解除程序的合规性' },
+    '吉林省': { s: '适中', w: 39, trait: '对用人单位举证充分性要求稳定，尺度居中', focus: '举证充分性' },
+    '黑龙江省': { s: '适中', w: 38, trait: '涉改制与老企业劳动争议较多，注重历史沿革事实', focus: '历史沿革与用工事实' },
+    '江苏省': { s: '严格', w: 42, trait: '苏南地区对企业规章制度民主程序与公示要求审查细致', focus: '制度民主程序与公示' },
+    '浙江省': { s: '适中', w: 41, trait: '对电子证据采纳度较高，重视实际履行与诚信原则', focus: '电子证据与实际履行' },
+    '安徽省': { s: '适中', w: 40, trait: '用工结构以制造业为主，注重考勤与工时证据', focus: '考勤工时与生产记录' },
+    '福建省': { s: '适中', w: 40, trait: '闽南地区民营经济活跃，注重双方约定与实际履行', focus: '约定履行与协商记录' },
+    '江西省': { s: '适中', w: 39, trait: '裁审尺度居中，注重解除事由的具体化', focus: '解除事由的具体化' },
+    '山东省': { s: '较严格', w: 41, trait: '对工会程序与集体协商要求较为完整', focus: '工会程序与集体协商' },
+    '河南省': { s: '适中', w: 39, trait: '劳动力输出大省，注重新业态与灵活用工争议处理', focus: '新业态用工与工时认定' },
+    '湖北省': { s: '适中', w: 40, trait: '武汉城市圈裁审规则统一度较高，尺度居中', focus: '规则统一与证据规范' },
+    '湖南省': { s: '适中', w: 40, trait: '注重考核标准的客观可量化，对主观评价采信谨慎', focus: '考核标准客观性' },
+    '广东省': { s: '严格', w: 36, trait: '珠三角裁审机关注重书面留痕，粤高法纪要细化举证责任分配', focus: '书面告知与考核过程记录' },
+    '广西壮族自治区': { s: '适中', w: 39, trait: '以国家法统一适用为主，裁审尺度相对宽松', focus: '国家法统一适用' },
+    '海南省': { s: '适中', w: 38, trait: '自贸港建设期用工形态多样，注重新型用工关系认定', focus: '新型用工关系认定' },
+    '四川省': { s: '适中', w: 39, trait: '对规章制度合法性链条审查完整，注重退工与档案转移', focus: '制度合法性与退工手续' },
+    '贵州省': { s: '适中', w: 38, trait: '裁审较依赖上级法院发布的指导案例', focus: '指导案例参照' },
+    '云南省': { s: '适中', w: 38, trait: '多民族地区用工形态多样，注重事实劳动关系认定', focus: '事实劳动关系认定' },
+    '西藏自治区': { s: '相对宽松', w: 37, trait: '案件量较少，以国家法统一口径为主', focus: '国家法统一适用' },
+    '陕西省': { s: '适中', w: 39, trait: '关中地区对试用期与解除事由审查较细', focus: '试用期与解除事由' },
+    '甘肃省': { s: '适中', w: 38, trait: '裁审尺度居中偏宽，注重调解结案', focus: '调解优先' },
+    '青海省': { s: '相对宽松', w: 37, trait: '案件量少，以国家法基本口径适用为主', focus: '国家法统一适用' },
+    '宁夏回族自治区': { s: '适中', w: 38, trait: '注重企业用工习惯与国家法的衔接', focus: '国家法统一适用' },
+    '新疆维吾尔自治区': { s: '适中', w: 38, trait: '案件类型以大型企业用工为主，程序要求规范', focus: '程序规范性' }
+  },
+
+  /* ---------- 精编属地指引（6 个重点城市 · 逐条编写口径） ---------- */
   lawByCity: {
     '广州市': {
       scope: '广东省 · 广州市（含市辖区裁审口径）',
@@ -1774,10 +1895,101 @@ function runRiskCheck() {
 let lawCity = '广州市';
 let lawTopic = DATA.lawTopics[0];   // 当前命中专题
 let lawHits = [];                   // 本次命中的关键词
+let lawAutoCity = '';               // 本次是否由提问中的城市名自动切换
+let lawLastQuery = '';              // 上次查询文本，用于判断是否为「新一次查询」
 
-function renderLawCities() {
-  $('#law-cities').innerHTML = DATA.lawCities.map(c => `
-    <span class="chip px-3 py-1.5 rounded-lg text-[13px] ${c === lawCity ? 'is-on' : ''}" data-law-city="${c}">${c}</span>`).join('');
+/* 按城市名取城市库记录 */
+function cityInfo(name) {
+  return DATA.lawCityLib.filter(c => c.n === name)[0] || { n: name, p: '其他地区', py: '' };
+}
+
+/* 输入关键词过滤城市：中文包含 / 拼音首字母 / 省份 */
+function filterCities(kw) {
+  const s = (kw || '').trim().toLowerCase();
+  if (!s) return DATA.lawCityLib.slice();
+  return DATA.lawCityLib.filter(c =>
+    c.n.indexOf(s) >= 0 || c.py.indexOf(s) === 0 || c.py.indexOf(s) >= 0 || c.p.indexOf(s) >= 0);
+}
+
+/* 从一段自然语言里识别城市名（用于“直接查询”：提问里带城市就自动切换所在地） */
+function detectCity(q) {
+  if (!q) return null;
+  let hit = null;
+  DATA.lawCityLib.forEach(c => {
+    const short = c.n.replace(/市$/, '');
+    if (q.indexOf(c.n) >= 0 || (short.length >= 2 && q.indexOf(short) >= 0)) {
+      if (!hit || c.n.length > hit.length) hit = c.n;
+    }
+  });
+  return hit;
+}
+
+/* 属地口径解析：有精编指引直接用，否则按省级画像推定（并显性标注为推定） */
+function resolveCityScope(name, topic) {
+  const edited = topic.cities ? topic.cities[name] : null;
+  if (edited) return Object.assign({ edited: true }, edited);
+
+  const info = cityInfo(name);
+  const prof = DATA.lawProvinceProfiles[info.p] || { s: '适中', w: 39, trait: '以国家法统一口径适用为主', focus: '国家法统一适用' };
+  return {
+    edited: false,
+    scope: info.p + ' · ' + name + '（省级画像推定）',
+    stricter: prof.s,
+    winRate: prof.w,
+    summary: '【模型推定】尚未收录 ' + name + '（' + info.p + '）的「' + topic.title + '」精编属地指引。'
+      + '基于 ' + info.p + ' 省级裁审画像，该地区审查尺度为「' + prof.s + '」，重点审查方向为「' + prof.focus + '」；' + prof.trait + '。'
+      + '本条口径由省级画像模型推定生成，需经当地最新裁审文件原文核实后，方可用于对外正式意见。',
+    keyPoints: [
+      '属地重点：' + prof.focus,
+      info.p + '区域特征：' + prof.trait,
+      '国家法统一要求同样适用，具体条文见右下「法条依据」栏（全国通用）'
+    ],
+    diffNote: '该城市暂无精编指引，当前展示为省级画像推定结果。正式版将接入当地裁审文件全文库核实。'
+  };
+}
+
+/* 渲染城市选择器：当前城市标签 / 收录数量 / 热门城市快捷片 */
+function renderCityPicker() {
+  $('#law-city-cur').textContent = lawCity;
+  $('#law-city-count').textContent = DATA.lawCityLib.length;
+  $('#law-hot').innerHTML = DATA.lawHotCities.map(c => `
+    <span class="chip px-3 py-1 rounded-full ${c === lawCity ? 'is-on' : ''}" data-law-city="${c}">${c}</span>`).join('');
+}
+
+/* 展开城市候选下拉：无关键词时置顶热门城市，其余按城市库顺序 */
+function openCityDrop(kw) {
+  const s = (kw || '').trim();
+  let list;
+  if (!s) {
+    const hot = DATA.lawHotCities.map(cityInfo);
+    const rest = DATA.lawCityLib.filter(c => DATA.lawHotCities.indexOf(c.n) < 0);
+    list = hot.concat(rest);
+  } else {
+    list = filterCities(s).slice(0, 40);
+  }
+  $('#law-city-drop').innerHTML = list.length ? list.map(c => `
+    <div class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition ${c.n === lawCity ? 'bg-brand-50/70' : 'hover:bg-slate-50'}" data-law-city="${c.n}">
+      <span class="text-[13px] ${c.n === lawCity ? 'font-semibold text-brand-700' : 'text-slate-700'}">${c.n}</span>
+      <span class="tag bg-slate-100 text-slate-500">${c.p}</span>
+      ${DATA.lawFullCities.indexOf(c.n) >= 0 ? '<span class="tag bg-emerald-50 text-emerald-700 border border-emerald-100">精编指引</span>' : ''}
+      <span class="ml-auto text-[11px] text-slate-300">${c.py.toUpperCase()}</span>
+    </div>`).join('')
+    : `<div class="px-3 py-4 text-[12.5px] text-slate-400 leading-6">
+         未匹配到「${esc(s)}」。当前收录 ${DATA.lawCityLib.length} 个主要用工城市，可尝试输入省份（如「江苏」）或拼音首字母（如「sz」）。
+       </div>`;
+  $('#law-city-drop').classList.remove('hidden');
+}
+
+function closeCityDrop() { $('#law-city-drop').classList.add('hidden'); }
+
+/* 选定城市：更新状态并刷新指引 */
+function selectCity(name) {
+  lawCity = name;
+  lawAutoCity = '';
+  $('#law-city-input').value = '';
+  closeCityDrop();
+  renderCityPicker();
+  renderLaw();
 }
 
 /* HTML 转义，避免用户输入被当作标签渲染 */
@@ -1834,17 +2046,28 @@ function renderLawMiss(q, empty) {
 function renderLaw() {
   const q = $('#law-query').value.trim();
 
+  // 仅当提问内容变化时重新识别城市；单纯切换所在地时保留人工选择
+  const isNewQuery = q !== lawLastQuery;
+  lawLastQuery = q;
+
   // 空输入 → 引导态
-  if (!q) { renderLawMiss('', true); return; }
+  if (!q) { lawAutoCity = ''; renderLawMiss('', true); return; }
 
   // 关键词命中专题；未命中 → 引导态
   const m = matchLawTopic(q);
-  if (!m) { renderLawMiss(q, false); return; }
+  if (!m) { lawAutoCity = ''; renderLawMiss(q, false); return; }
+
+  // 「直接查询」：提问里带城市名时自动切换用工所在地
+  if (isNewQuery) {
+    const auto = detectCity(q);
+    if (auto && auto !== lawCity) { lawCity = auto; lawAutoCity = auto; renderCityPicker(); }
+    else { lawAutoCity = ''; }
+  }
 
   lawTopic = m.topic;
   lawHits = m.hits;
   const cities = lawTopic.cities;
-  const d = cities[lawCity];
+  const d = resolveCityScope(lawCity, lawTopic);
   $('#law-scope').textContent = d.scope;
   $('#law-diff-topic').textContent = '当前专题 · ' + lawTopic.title;
 
@@ -1859,19 +2082,22 @@ function renderLaw() {
       <div class="flex flex-wrap items-center gap-2 mt-2.5">
         <span class="text-[11.5px] text-slate-500">命中关键词</span>
         ${lawHits.map(h => `<span class="tag bg-white text-brand-700 border border-brand-100">${esc(h)}</span>`).join('')}
-        <span class="ml-auto text-[11.5px] text-slate-400">匹配度 ${m.pct}% · 检索耗时 0.7s · 覆盖 ${Object.keys(cities).length} 城属地口径</span>
+        <span class="tag bg-white text-slate-600 border border-brand-100">${icon('<path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>', 12)} ${lawCity}</span>
+        ${lawAutoCity ? `<span class="tag bg-emerald-50 text-emerald-700 border border-emerald-100">已按提问自动切换所在地 → ${lawAutoCity}</span>` : ''}
+        <span class="ml-auto text-[11.5px] text-slate-400">匹配度 ${m.pct}% · 检索耗时 0.7s · 覆盖 ${DATA.lawCityLib.length} 城属地口径</span>
       </div>
     </div>
 
-    <div class="rounded-xl bg-brand-50 border border-brand-100 p-4">
+    <div class="rounded-xl ${d.edited ? 'bg-brand-50 border-brand-100' : 'bg-amber-50/50 border-amber-100'} border p-4">
       <div class="flex items-center gap-2 mb-2">
-        <span class="tag bg-white text-brand-700 border border-brand-100">
-          ${icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/>', 13)} 本地化适用指引
+        <span class="tag ${d.edited ? 'bg-white text-brand-700 border-brand-100' : 'bg-white text-amber-700 border-amber-200'}">
+          ${icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/>', 13)}
+          ${d.edited ? '本地化适用指引' : '省级画像推定 · 待原文核实'}
         </span>
-        <span class="tag bg-white text-slate-600 border border-brand-100">审查尺度 · ${d.stricter}</span>
-        <span class="ml-auto text-[12px] text-brand-700">同类案件企业胜诉参考率 ${d.winRate}%</span>
+        <span class="tag bg-white text-slate-600 border border-[#e5e8f0]">审查尺度 · ${d.stricter}</span>
+        <span class="ml-auto text-[12px] ${d.edited ? 'text-brand-700' : 'text-amber-700'}">同类案件企业胜诉参考率 ${d.winRate}%</span>
       </div>
-      <p class="text-[13.5px] leading-7 text-brand-900">${d.summary}</p>
+      <p class="text-[13.5px] leading-7 ${d.edited ? 'text-brand-900' : 'text-amber-900'}">${d.summary}</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1890,16 +2116,18 @@ function renderLaw() {
       </div>
     </div>`;
 
-  // ② 同题差异速览（跟随当前专题，切换城市实时对比）
-  const order = ['广州市', '上海市', '深圳市', '北京市', '杭州市', '成都市'];
+  // ② 同题差异速览：6 个精编城市 + 当前城市（若不在其中则置顶）
+  const order = DATA.lawFullCities.slice();
+  if (order.indexOf(lawCity) < 0) order.unshift(lawCity);
   $('#law-diff').innerHTML = order.map(c => {
-    const x = cities[c];
+    const x = resolveCityScope(c, lawTopic);
     const on = c === lawCity;
     return `
       <div class="rounded-xl border ${on ? 'border-brand-300 bg-brand-50/50' : 'border-[#eef1f7]'} p-3 cursor-pointer transition hover:border-brand-200" data-law-city="${c}">
         <div class="flex items-center gap-2">
           <span class="text-[13px] font-medium ${on ? 'text-brand-700' : 'text-slate-700'}">${c}</span>
           <span class="tag ${x.stricter === '严格' || x.stricter === '较严格' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-500'}">${x.stricter}</span>
+          ${x.edited ? '' : '<span class="tag bg-amber-50 text-amber-700 border border-amber-100">推定</span>'}
           <span class="ml-auto text-[12px] font-semibold text-slate-600">${x.winRate}%</span>
         </div>
         <div class="stat-bar mt-2"><i style="width:${x.winRate}%;background:${on ? '#2563eb' : '#cbd5e1'}"></i></div>
@@ -2375,12 +2603,25 @@ function bindEvents() {
     if (jump) goPage(jump.dataset.riskJump);
   });
 
-  /* --- 法规查询 --- */
+  /* --- 法规查询：可搜索的城市选择器 + 关键词查询 --- */
+  const cityInput = $('#law-city-input');
+  cityInput.addEventListener('focus', () => openCityDrop(cityInput.value));
+  cityInput.addEventListener('input', () => openCityDrop(cityInput.value));
+  cityInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const list = filterCities(cityInput.value);
+      if (list.length) selectCity(list[0].n);
+      else cityInput.value = '';
+    }
+    if (e.key === 'Escape') { closeCityDrop(); cityInput.blur(); }
+  });
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-law-city]');
-    if (c) { lawCity = c.dataset.lawCity; renderLawCities(); renderLaw(); }
+    if (c) selectCity(c.dataset.lawCity);
     const q = e.target.closest('[data-law-quick]');
     if (q) { $('#law-query').value = q.dataset.lawQuick; renderLaw(); }
+    if (!e.target.closest('#law-city-picker')) closeCityDrop();
   });
   $('#law-btn').addEventListener('click', renderLaw);
   $('#law-query').addEventListener('keydown', e => { if (e.key === 'Enter') renderLaw(); });
@@ -2454,7 +2695,7 @@ function bindEvents() {
 /* ---------- 初始化 ---------- */
 function init() {
   renderDashboard();
-  renderLawCities();
+  renderCityPicker();
   renderLaw();
   renderCases();
   renderExperts();
