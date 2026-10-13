@@ -152,6 +152,46 @@ body {
   font-weight: 600;
 }
 
+/* 类案卡片：展开态与命中关键词高亮 */
+.case-caret {
+  display: inline-flex;
+  transition: transform 0.22s ease;
+}
+.case-item.is-open .case-caret {
+  transform: rotate(180deg);
+}
+.case-item.is-open {
+  border-color: #b9cdf7;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.07);
+}
+mark.kw {
+  background: #fff3c4;
+  color: #92400e;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+/* 轻提示 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 42px;
+  transform: translateX(-50%) translateY(14px);
+  background: #0f172a;
+  color: #fff;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(16, 24, 40, 0.22);
+  opacity: 0;
+  transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 999;
+}
+.toast.is-in {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 .stat-bar {
   height: 8px;
   border-radius: 99px;
@@ -570,7 +610,20 @@ body {
             </div>
             <button id="case-btn" class="h-12 px-6 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[.98] text-white text-[14px] font-medium transition shadow-sm">检索并预判</button>
           </div>
-          <div class="flex flex-wrap items-center gap-2 mt-4 text-[12px]">
+
+          <div class="flex flex-wrap gap-2 mt-4 text-[12px]">
+            <span class="text-slate-400 mr-1">常用检索：</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-quick="试用期以不符合录用条件解除 违法解除赔偿金">试用期解除</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-quick="加班费计算基数 综合计算工时 举证责任">加班费基数</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-quick="竞业限制补偿金标准 违约金过高酌减">竞业限制</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-quick="经济性裁员 提前三十日说明情况 工会程序">经济性裁员</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-quick="劳务派遣用工比例 三性岗位 同工同酬">派遣用工比例</span>
+            <span class="chip px-3 py-1 rounded-full" data-case-quick="严重违反规章制度 违纪解除 公示程序">违纪解除</span>
+          </div>
+
+          <div id="case-hit" class="mt-4"></div>
+
+          <div class="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-[#eef1f7] text-[12px]">
             <span class="text-slate-400 mr-1">裁判年份</span>
             <span class="chip px-3 py-1 rounded-full is-on" data-case-year="全部">全部</span>
             <span class="chip px-3 py-1 rounded-full" data-case-year="2025">2025</span>
@@ -589,8 +642,9 @@ body {
             <div class="flex items-center gap-3 mb-1">
               <span class="w-1 h-4 rounded bg-violet-500"></span>
               <h3 class="font-semibold text-[15px]">判例倾向预判</h3>
+              <span id="case-topic" class="tag bg-violet-50 text-violet-700 border border-violet-100 ml-auto"></span>
             </div>
-            <p class="text-[12px] text-slate-400 mb-5">基于 1,286 份同类生效裁判文书统计</p>
+            <p class="text-[12px] text-slate-400 mb-5">基于 <b id="case-corpus" class="text-slate-500">0</b> 份同类生效裁判文书统计</p>
             <div id="case-tendency" class="space-y-4"></div>
             <div class="mt-6 pt-5 border-t border-[#eef1f7]">
               <div class="text-[12px] text-slate-400 mb-2">核心裁判要旨</div>
@@ -603,6 +657,7 @@ body {
             <div class="flex items-center gap-3 mb-4">
               <span class="w-1 h-4 rounded bg-brand-500"></span>
               <h3 class="font-semibold text-[15px]">类案清单</h3>
+              <span class="text-[11.5px] text-slate-400 ml-1">点击卡片展开裁判要点</span>
               <span id="case-count" class="ml-auto text-[12px] text-slate-400"></span>
             </div>
             <div id="case-list" class="space-y-3"></div>
@@ -678,6 +733,8 @@ body {
               <span class="w-1 h-4 rounded bg-brand-500"></span>
               <h3 class="font-semibold text-[15px]">报告配置</h3>
             </div>
+
+            <div id="rpt-quotes" class="mb-5"></div>
 
             <label class="text-[12px] text-slate-500">报告模板</label>
             <div id="rpt-tpl" class="space-y-2 mt-2 mb-5"></div>
@@ -1589,21 +1646,343 @@ const DATA = {
     }
   ],
 
-  /* ---------- 类案检索 ---------- */
-  caseTendency: [
-    { name: '支持劳动者（认定违法解除）', pct: 68, color: '#dc2626' },
-    { name: '部分支持（调整赔偿金额）', pct: 18, color: '#d97706' },
-    { name: '支持用人单位', pct: 14, color: '#16a34a' }
+  /* ---------- 类案检索智库：按检索词命中专题，输出该专题的判例倾向 + 类案清单 ----------
+     专题结构：
+       keys     —— 命中关键词（越长得分越高）
+       corpus   —— 该专题语料库收录的裁判文书份数
+       tendency —— 判例倾向分布
+       gist     —— 核心裁判要旨
+       cases    —— 类案清单（可展开查看裁判要点与争议焦点）
+     ------------------------------------------------------------------ */
+  caseTopics: [
+    {
+      id: 'probation',
+      title: '试用期解除劳动合同',
+      keys: ['试用期', '录用条件', '不符合录用条件', '考核不合格', '试用', '违法解除赔偿金'],
+      corpus: 1286,
+      tendency: [
+        { name: '支持劳动者（认定违法解除）', pct: 68, color: '#dc2626' },
+        { name: '部分支持（调整赔偿金额）', pct: 18, color: '#d97706' },
+        { name: '支持用人单位', pct: 14, color: '#16a34a' }
+      ],
+      gist: '用人单位以“试用期考核不合格”为由解除劳动合同的，须举证证明录用条件已明确告知且有客观考核依据。仅提供直属主管的考核评价，未提供量化指标、考核制度及员工签收记录的，多数裁判认定为违法解除，需支付二倍经济补偿标准的赔偿金。',
+      cases: [
+        {
+          no: '（2025）粤01民终4821号', court: '广州市中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '某科技公司试用期解除劳动合同争议案',
+          gist: '公司仅提交主管评价表，未提供录用条件签收记录，法院认定违法解除，判付赔偿金 24,000 元。',
+          amount: '判付赔偿金 24,000 元',
+          tags: ['录用条件未书面告知', '举证不能'],
+          points: ['用人单位对“不符合录用条件”承担举证责任，须证明录用条件已明确告知并留存签收证据', '仅有直属主管的主观评价，不能替代客观可量化的考核标准', '违法解除应按经济补偿标准的二倍支付赔偿金']
+        },
+        {
+          no: '（2025）粤03民终2196号', court: '深圳市中级人民法院', year: '2025', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '某医疗器械公司试用期考核解除案',
+          gist: '公司提供了岗位说明书但无签收，法院认定解除违法但劳动者已入职新单位，调整赔偿计算基数。',
+          amount: '按实际在职期间调整赔偿基数',
+          tags: ['证据瑕疵', '赔偿基数争议'],
+          points: ['岗位说明书未经劳动者签收，无法证明录用条件已明确告知', '劳动者已入职新单位的，赔偿金按实际损失与在职期间综合认定', '解除是否合法与赔偿金额计算是两个独立审查环节']
+        },
+        {
+          no: '（2024）沪01民终7734号', court: '上海市第一中级人民法院', year: '2024', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '某咨询公司试用期不符合录用条件解除案',
+          gist: '公司提供录用条件确认书、量化考核表及送达凭证，程序完备，法院认定解除合法。',
+          amount: '无需支付赔偿金',
+          tags: ['程序完备', '证据链完整'],
+          points: ['录用条件在 offer 阶段书面确认，与岗位职责一一对应', '量化考核表有过程记录并经劳动者确认', '解除通知在试用期届满前送达并保留凭证']
+        },
+        {
+          no: '（2024）粤民申1187号', court: '广东省高级人民法院', year: '2024', level: '高级人民法院', result: '支持劳动者', color: 'rose',
+          title: '试用期届满后作出解除决定案',
+          gist: '解除通知送达日已超过试用期，法院认定应按正式期解除标准审查，构成违法解除。',
+          amount: '判付赔偿金 38,000 元',
+          tags: ['解除时点超期', '程序性违法'],
+          points: ['解除决定的作出与送达均须在试用期届满前完成', '超期解除不再适用“不符合录用条件”条款，转为正式期解除标准审查', '企业内部审批时间不计入送达时点认定']
+        },
+        {
+          no: '（2023）京03民终9021号', court: '北京市第三中级人民法院', year: '2023', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '录用条件约定不明确解除案',
+          gist: '录用条件为“符合岗位要求”等笼统表述，法院认定标准不明确，举证不能，构成违法解除。',
+          amount: '判付赔偿金 19,500 元',
+          tags: ['录用条件笼统', '标准不可量化'],
+          points: ['“符合岗位要求”“胜任工作”等表述不构成明确的录用条件', '考核标准应具体到可衡量的产出要求或量化指标', '标准不明确的举证不利后果由用人单位承担']
+        }
+      ]
+    },
+    {
+      id: 'overtime',
+      title: '加班费与工时争议',
+      keys: ['加班', '加班费', '加班工资', '工时', '基数', '综合计算工时', '不定时', '考勤'],
+      corpus: 942,
+      tendency: [
+        { name: '支持劳动者（全额支持加班费）', pct: 61, color: '#dc2626' },
+        { name: '部分支持（酌减或调整基数）', pct: 26, color: '#d97706' },
+        { name: '支持用人单位', pct: 13, color: '#16a34a' }
+      ],
+      gist: '加班费争议的核心是举证责任分配与计算基数认定。劳动者主张加班事实的，应先承担初步举证责任；有证据证明用人单位掌握考勤记录而不提供的，由用人单位承担不利后果。计算基数以劳动合同约定的正常工作时间工资为准，约定明显偏低或以“包薪制”免除法定责任的，该约定无效并被依法调整。',
+      cases: [
+        {
+          no: '（2025）苏01民终3312号', court: '南京市中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '某制造企业综合计算工时加班费案',
+          gist: '未经审批实行综合计算工时，法院按标准工时重新核定加班时长，判付加班费差额 86,400 元。',
+          amount: '判付加班费差额 86,400 元',
+          tags: ['综合计算工时未经审批', '工时折算'],
+          points: ['实行综合计算工时制须经人社部门审批，未经审批的按标准工时计付加班费', '考勤记录由用人单位掌握的，其拒不提供的应承担举证不利后果', '加班费基数按正常工作时间工资确定，剔除非常规性奖金']
+        },
+        {
+          no: '（2025）粤01民终5578号', court: '广州市中级人民法院', year: '2025', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '包薪制折抵加班费争议案',
+          gist: '劳动合同约定“月薪 8,000 元含全部加班费”，法院认定该约定免除法定责任无效，按实际工资重新核算并酌减。',
+          amount: '按实际工资重新核算后酌减',
+          tags: ['包薪制条款无效', '约定畸低基数'],
+          points: ['“月薪已含全部加班费”的概括性约定，因免除法定责任而无效', '约定基数显著低于实际工资的，裁审机构可依法调整', '奖金是否计入基数，视其是否按月固定发放']
+        },
+        {
+          no: '（2024）沪02民终6609号', court: '上海市第二中级人民法院', year: '2024', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '绩效奖金是否计入加班费基数案',
+          gist: '按月固定发放的绩效奖金被认定属正常工作时间工资构成，应计入加班费基数，判付差额 32,100 元。',
+          amount: '判付加班费差额 32,100 元',
+          tags: ['固定发放奖金', '基数构成'],
+          points: ['按月固定发放的绩效奖金属于正常工作时间工资，应计入加班费基数', '非按月发放的年度奖金、一次性奖励一般不计入基数', '基数不得低于当地最低工资标准']
+        },
+        {
+          no: '（2024）京01民终8842号', court: '北京市第一中级人民法院', year: '2024', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '考勤记录与自愿加班抗辩案',
+          gist: '员工虽提交加班申请单，但无实际出勤记录佐证，法院未采信其加班主张，驳回部分请求。',
+          amount: '驳回部分加班费请求',
+          tags: ['初步举证责任', '证据不足'],
+          points: ['劳动者主张加班费应先就加班事实承担初步举证责任', '仅有加班申请单而无实际出勤或工作成果佐证的，难以认定加班事实', '以“自愿加班”抗辩且无审批记录的，多数地区不予采信']
+        },
+        {
+          no: '（2023）浙01民终4407号', court: '杭州市中级人民法院', year: '2023', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '不定时工作制高管加班费案',
+          gist: '高管岗位经审批实行不定时工作制，主张法定节假日加班费获支持，其余加班费请求不予支持。',
+          amount: '仅支持法定节假日加班费',
+          tags: ['不定时工作制', '加班范围限缩'],
+          points: ['经审批实行不定时工作制的岗位，通常不适用延时加班费', '法定节假日安排工作仍须支付加班费', '企业主张适用特殊工时的，应提供审批文件原件']
+        }
+      ]
+    },
+    {
+      id: 'noncompete',
+      title: '竞业限制与保密义务',
+      keys: ['竞业', '竞业限制', '保密', '补偿金', '违约金', '商业秘密'],
+      corpus: 415,
+      tendency: [
+        { name: '支持用人单位（条款有效需付违约金）', pct: 52, color: '#16a34a' },
+        { name: '部分支持（调减违约金）', pct: 33, color: '#d97706' },
+        { name: '支持劳动者（条款无效或无需支付）', pct: 15, color: '#dc2626' }
+      ],
+      gist: '竞业限制的效力审查围绕三个要件：主体适格（限于高级管理人员、高级技术人员和其他负有保密义务的人员）、补偿对价（月补偿一般不低于离职前十二个月平均工资的 30% 且不低于当地最低工资）、期限合法（不超过 2 年）。违约金约定过高时，法院可结合实际损失与补偿总额酌减；用人单位三个月未付补偿的，劳动者可请求解除竞业限制。',
+      cases: [
+        {
+          no: '（2025）沪01民终2208号', court: '上海市第一中级人民法院', year: '2025', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '竞业限制违约金过高酌减案',
+          gist: '约定违约金 120 万元，法院按实际损失与补偿总额比例酌减至 36 万元。',
+          amount: '违约金由 120 万元酌减至 36 万元',
+          tags: ['违约金酌减', '损失不匹配'],
+          points: ['违约金数额应与实际损失、补偿数额大致相当', '约定畸高且用人单位未举证实际损失的，法院有权酌减', '继续履行竞业义务的期限不因违约金调整而缩短']
+        },
+        {
+          no: '（2025）粤03民终6104号', court: '深圳市中级人民法院', year: '2025', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '技术骨干违反竞业限制案',
+          gist: '员工离职后入职直接竞争对手，法院判令支付违约金并继续履行竞业义务。',
+          amount: '判付违约金 48 万元',
+          tags: ['入职竞争对手', '继续履行义务'],
+          points: ['员工离职后入职存在竞争关系的企业，构成竞业限制违约', '除支付违约金外，仍须继续履行剩余期限的竞业义务', '用人单位提供的社保缴纳记录可作为任职证据']
+        },
+        {
+          no: '（2024）苏05民终3376号', court: '苏州市中级人民法院', year: '2024', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '普通岗位约定竞业限制无效案',
+          gist: '员工岗位不涉及商业秘密，法院认定竞业限制条款无效，无需支付违约金。',
+          amount: '条款无效，无需支付违约金',
+          tags: ['主体不适格', '普通岗位'],
+          points: ['竞业限制主体限于高管、高级技术人员和其他负有保密义务的人员', '普通操作岗、行政岗约定竞业限制的，多数地区认定无效', '企业应就劳动者接触商业秘密的事实承担举证责任']
+        },
+        {
+          no: '（2024）京02民终7013号', court: '北京市第二中级人民法院', year: '2024', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '未约定补偿标准的竞业限制案',
+          gist: '未约定补偿标准，法院按离职前平均工资 30% 认定，企业已实际支付的差额部分可抵扣。',
+          amount: '按离职前平均工资 30% 认定补偿',
+          tags: ['补偿标准缺位', '差额抵扣'],
+          points: ['未约定补偿标准的，按离职前十二个月平均工资的 30% 认定', '该补偿标准同时不得低于当地最低工资', '已实际支付的部分可在应付补偿中抵扣']
+        },
+        {
+          no: '（2023）粤01民终9915号', court: '广州市中级人民法院', year: '2023', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '未支付补偿满三个月员工解除竞业案',
+          gist: '用人单位连续三个月未支付补偿，员工书面通知后解除竞业限制，不承担违约责任。',
+          amount: '竞业限制解除，不承担违约责任',
+          tags: ['未付补偿', '劳动者解除权'],
+          points: ['用人单位三个月未支付补偿的，劳动者可请求解除竞业限制约定', '解除需经书面通知，口头主张难以产生解除效力', '已履行期间的补偿仍可主张']
+        }
+      ]
+    },
+    {
+      id: 'layoff',
+      title: '经济性裁员与规模解除',
+      keys: ['裁员', '裁减', '经济性裁员', '规模解除', '人员安置', '提前三十日', '工会'],
+      corpus: 638,
+      tendency: [
+        { name: '支持劳动者（程序违法认定）', pct: 57, color: '#dc2626' },
+        { name: '部分支持（调整赔偿金额）', pct: 25, color: '#d97706' },
+        { name: '支持用人单位', pct: 18, color: '#16a34a' }
+      ],
+      gist: '经济性裁员的合法性审查采取“实体要件 + 程序要件”双重标准：实体上须符合《劳动合同法》第四十一条规定的四种情形之一，且裁减 20 人以上或不足 20 人但占职工总数 10% 以上；程序上须提前 30 日向工会或全体职工说明情况、听取意见，并将裁减人员方案向劳动行政部门报告。程序要件缺失的，多被认定为违法解除。',
+      cases: [
+        {
+          no: '（2025）沪02民终4187号', court: '上海市第二中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '未提前三十日说明情况裁员案',
+          gist: '公司未履行提前 30 日说明与听取意见程序，法院认定违法解除，判付赔偿金 15.6 万元。',
+          amount: '判付赔偿金 156,000 元',
+          tags: ['程序要件缺失', '未听取意见'],
+          points: ['提前 30 日向工会或全体职工说明情况是经济性裁员的法定程序要件', '听取意见应有会议记录、意见汇总等留痕材料', '程序违法即构成违法解除，与实体理由是否成立无关']
+        },
+        {
+          no: '（2025）粤01民终7733号', court: '广州市中级人民法院', year: '2025', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '裁减比例未达标准解除案',
+          gist: '裁减人数未达 20 人且未占职工总数 10%，不属经济性裁员，按个别解除标准审查并调整赔偿。',
+          amount: '按个别解除标准调整赔偿',
+          tags: ['裁减比例认定', '程序适用错误'],
+          points: ['裁减不足 20 人且低于职工总数 10% 的，不适用经济性裁员程序', '此类解除应按《劳动合同法》第四十条个别解除标准审查', '错误适用程序不必然导致解除违法，但须补足个别解除的证据要求']
+        },
+        {
+          no: '（2024）京03民终5521号', court: '北京市第三中级人民法院', year: '2024', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '未向劳动行政部门报告裁员方案案',
+          gist: '未提交裁员方案报告，程序要件缺失，构成违法解除。',
+          amount: '判付赔偿金 98,000 元',
+          tags: ['未报告方案', '程序违法'],
+          points: ['向劳动行政部门报告裁减人员方案是法定程序要件', '报告材料的形成时间应与裁员实施时间相符', '企业以“口头报备”抗辩的，通常不予采信']
+        },
+        {
+          no: '（2024）苏01民终2244号', court: '南京市中级人民法院', year: '2024', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '经营严重困难依法裁员案',
+          gist: '公司提供审计报告证明生产经营发生严重困难，程序完备，法院认定裁员合法。',
+          amount: '解除合法，支付经济补偿',
+          tags: ['实体要件成立', '程序完备'],
+          points: ['以“生产经营发生严重困难”为由裁员，需提供审计报告等客观财务证据', '实体要件与程序要件同时满足的，裁员合法有效', '仍须依法支付经济补偿（N）并办理退工手续']
+        },
+        {
+          no: '（2023）浙01民终6690号', court: '杭州市中级人民法院', year: '2023', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '优先留用人员被裁案',
+          gist: '未优先留用家庭无其他就业人员且有需扶养老人的员工，法院认定违反优先留用规定。',
+          amount: '判付赔偿金 72,000 元',
+          tags: ['优先留用义务', '裁员名单争议'],
+          points: ['应优先留用长期固定期限合同、无固定期限合同及家庭困难员工', '裁员名单的形成应有客观标准与书面依据', '违反优先留用规定的，可被认定为裁员对象选择违法']
+        }
+      ]
+    },
+    {
+      id: 'dispatch',
+      title: '劳务派遣与用工比例',
+      keys: ['派遣', '劳务派遣', '三性', '用工比例', '用工总量', '同工同酬', '辅助性岗位'],
+      corpus: 366,
+      tendency: [
+        { name: '支持劳动者', pct: 54, color: '#dc2626' },
+        { name: '部分支持（连带责任认定）', pct: 28, color: '#d97706' },
+        { name: '支持用人单位', pct: 18, color: '#16a34a' }
+      ],
+      gist: '劳务派遣争议审查两个核心：一是“三性”岗位限制（临时性、辅助性、替代性），其中辅助性岗位须经职工代表大会或全体职工讨论确定并公示；二是用工比例限制，使用的被派遣劳动者数量不得超过用工总量的 10%。超比例或超范围使用派遣工的，可能被认定为与用工单位构成事实劳动关系，用工单位需承担相应责任。',
+      cases: [
+        {
+          no: '（2025）粤01民终3382号', court: '广州市中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '超比例派遣认定事实劳动关系案',
+          gist: '派遣人数占比 23%，远超 10% 上限，法院认定与用工单位构成事实劳动关系。',
+          amount: '认定事实劳动关系，补付工资差额',
+          tags: ['超比例用工', '事实劳动关系'],
+          points: ['被派遣劳动者数量不得超过用工总量的 10%', '用工总量＝订立劳动合同人数 + 使用派遣人数', '长期、稳定、超比例使用派遣工的，可能被认定事实劳动关系']
+        },
+        {
+          no: '（2025）沪01民终5507号', court: '上海市第一中级人民法院', year: '2025', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '辅助性岗位未经民主程序案',
+          gist: '辅助性岗位未履行民主程序，派遣协议效力被否定，用工单位与派遣单位承担连带责任。',
+          amount: '两单位承担连带赔偿责任',
+          tags: ['辅助性岗位未公示', '连带责任'],
+          points: ['辅助性岗位的确定须经职代会或全体职工讨论并公示', '违反“三性”规定的派遣协议效力存在被否定的风险', '给劳动者造成损害的，派遣单位与用工单位承担连带责任']
+        },
+        {
+          no: '（2024）京02民终8814号', court: '北京市第二中级人民法院', year: '2024', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '替代性岗位派遣合规案',
+          gist: '因原岗员工产假产生的替代性岗位派遣，法院认定符合“三性”要求。',
+          amount: '派遣关系合法有效',
+          tags: ['替代性岗位', '派遣合规'],
+          points: ['因员工脱产学习、休假等原因无法工作期间，可由被派遣劳动者替代', '替代性岗位具有临时性与期限对应性', '派遣协议、岗位说明与考勤记录构成完整证据链']
+        },
+        {
+          no: '（2024）苏05民终2298号', court: '苏州市中级人民法院', year: '2024', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '派遣工同工同酬差额案',
+          gist: '派遣员工与同岗直接用工人员工资差距明显，法院判付同工同酬差额及经济补偿。',
+          amount: '判付同工同酬差额 41,600 元',
+          tags: ['同工同酬', '待遇歧视'],
+          points: ['用工单位应对同类岗位劳动者实行相同的劳动报酬分配办法', '工资差距明显且无合理解释的，应补足差额', '同工同酬差额的举证责任由用工单位承担']
+        },
+        {
+          no: '（2023）粤03民终4412号', court: '深圳市中级人民法院', year: '2023', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '用工总量计算口径争议案',
+          gist: '法院明确用工总量为订立劳动合同人数与使用派遣人数之和，按此口径重新核定比例。',
+          amount: '按法定口径重新核定比例',
+          tags: ['用工总量口径', '比例核定'],
+          points: ['用工总量＝订立劳动合同人数 + 使用的被派遣劳动者人数', '不得以“外包人员不计入”等方式规避比例限制', '比例超标的整改应有明确计划与时间表']
+        }
+      ]
+    },
+    {
+      id: 'discipline',
+      title: '严重违纪解除与规章制度效力',
+      keys: ['违纪', '严重违纪', '严重违反', '规章制度', '开除', '警告', '员工手册', '公示'],
+      corpus: 1104,
+      tendency: [
+        { name: '支持劳动者（程序或依据瑕疵）', pct: 55, color: '#dc2626' },
+        { name: '部分支持（减轻赔偿责任）', pct: 22, color: '#d97706' },
+        { name: '支持用人单位', pct: 23, color: '#16a34a' }
+      ],
+      gist: '以严重违反规章制度解除劳动合同，需同时满足三个要件：规章制度内容合法，且经民主程序制定并向劳动者公示或告知；劳动者的违纪事实有充分、客观的证据支撑；解除程序正当，包括事先通知工会、书面送达解除决定。任一环节缺失，均可能被认定为违法解除。',
+      cases: [
+        {
+          no: '（2025）京01民终2266号', court: '北京市第一中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '规章制度未公示解除案',
+          gist: '员工手册无签收记录、未公示，不能作为解除依据，认定违法解除。',
+          amount: '判付赔偿金 64,000 元',
+          tags: ['制度未公示', '不能作为依据'],
+          points: ['规章制度须经民主程序制定并向劳动者公示或告知', '无签收记录、无培训留痕的，不能作为解除依据', '公示方式的举证责任在用人单位']
+        },
+        {
+          no: '（2025）沪02民终7731号', court: '上海市第二中级人民法院', year: '2025', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '严重违纪证据充分解除案',
+          gist: '公司提供监控记录、员工书面检讨与工会告知函，程序与证据完备，解除合法。',
+          amount: '解除合法，无需支付赔偿金',
+          tags: ['证据链完整', '程序正当'],
+          points: ['违纪事实有监控、书面检讨、调查报告等多重证据印证', '解除前已通知工会并留存告知函', '解除决定书已送达劳动者并有签收凭证']
+        },
+        {
+          no: '（2024）粤01民终6613号', court: '广州市中级人民法院', year: '2024', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '解除通知未送达工会案',
+          gist: '未事先通知工会，法院认定程序瑕疵，但因违纪事实成立，酌定减轻赔偿责任。',
+          amount: '酌定减轻赔偿责任',
+          tags: ['程序瑕疵', '通知工会'],
+          points: ['单方解除前应事先将理由通知工会', '未通知工会属程序瑕疵，但司法实践中可与实体违法区分处理', '用人单位补正通知工会并有工会复函的，程序瑕疵可被治愈']
+        },
+        {
+          no: '（2024）浙01民终3384号', court: '杭州市中级人民法院', year: '2024', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '一次轻微违纪即解除案',
+          gist: '规章制度未对“严重”情形作出具体界定，一次轻微违纪即解除，被认定处罚失当。',
+          amount: '认定违法解除，判付赔偿金 47,000 元',
+          tags: ['“严重”标准缺失', '处罚失当'],
+          points: ['规章制度应明确列举“严重违反”的具体情形', '一次轻微违纪即解除，与“过罚相当”原则不符', '处罚梯度（警告—记过—解除）未履行的，解除常被否定']
+        },
+        {
+          no: '（2023）苏01民终7752号', court: '南京市中级人民法院', year: '2023', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '考勤异常未给申辩机会解除案',
+          gist: '未给予员工申辩说明机会即解除，违反正当程序原则。',
+          amount: '判付赔偿金 53,000 元',
+          tags: ['未经申辩', '正当程序'],
+          points: ['作出解除决定前应给予劳动者陈述与申辩的机会', '考勤异常可能存在客观原因，未核实即解除构成程序失当', '调查笔录、谈话记录是程序正当的关键留痕']
+        }
+      ]
+    }
   ],
-  caseGist: '用人单位以“试用期考核不合格”为由解除劳动合同的，须举证证明录用条件已明确告知且有客观考核依据。仅提供直属主管的考核评价，未提供量化指标、考核制度及员工签收记录的，多数裁判认定为违法解除，需支付二倍经济补偿标准的赔偿金。',
 
-  cases: [
-    { no: '（2025）粤01民终4821号', court: '广州市中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose', title: '某科技公司试用期解除劳动合同争议案', gist: '公司仅提交主管评价表，未提供录用条件签收记录，法院认定违法解除，判付赔偿金 24,000 元。' },
-    { no: '（2025）粤03民终2196号', court: '深圳市中级人民法院', year: '2025', level: '中级人民法院', result: '部分支持', color: 'amber', title: '某医疗器械公司试用期考核解除案', gist: '公司提供了岗位说明书但无签收，法院认定解除违法但劳动者已入职新单位，调整赔偿计算基数。' },
-    { no: '（2024）沪01民终7734号', court: '上海市第一中级人民法院', year: '2024', level: '中级人民法院', result: '支持用人单位', color: 'emerald', title: '某咨询公司试用期不符合录用条件解除案', gist: '公司提供录用条件确认书、量化考核表及送达凭证，程序完备，法院认定解除合法。' },
-    { no: '（2024）粤民申1187号', court: '广东省高级人民法院', year: '2024', level: '高级人民法院', result: '支持劳动者', color: 'rose', title: '试用期届满后作出解除决定案', gist: '解除通知送达日已超过试用期，法院认定应按正式期解除标准审查，构成违法解除。' },
-    { no: '（2023）京03民终9021号', court: '北京市第三中级人民法院', year: '2023', level: '中级人民法院', result: '支持劳动者', color: 'rose', title: '录用条件约定不明确解除案', gist: '录用条件为“符合岗位要求”等笼统表述，法院认定标准不明确，举证不能，构成违法解除。' }
-  ],
+  /* ---------- 报告引用态：类案检索页「引用到报告」写入此处 ---------- */
+  reportQuotes: [],
 
   /* ---------- 智能咨询：预置问答 ---------- */
   chatQuick: ['试用期解除要赔多少钱？', '竞业限制补偿金标准', '加班费基数怎么算', '员工不辞而别怎么处理'],
@@ -2156,14 +2535,104 @@ function updateLawProgress() {
   $('#law-progress').textContent = all.length ? `已完成 ${done} / ${all.length}` : '';
 }
 
-/* ---------- 类案检索 ---------- */
+/* ---------- 类案检索智库（按检索词命中专题 → 输出倾向预判 + 类案清单） ---------- */
 let caseYear = '全部';
 let caseLevel = '全部';
+let caseTopic = DATA.caseTopics[0];
+let caseHits = [];
+let caseLastQuery = '';
+let caseList = [];                 // 当前筛选结果，供展开 / 引用 / 复制定位
+
+/* 检索词命中专题 */
+function matchCaseTopic(q) {
+  const s = (q || '').trim();
+  if (!s) return null;
+  let best = null, bestScore = 0, bestHits = [];
+  DATA.caseTopics.forEach(t => {
+    let score = 0;
+    const hits = [];
+    t.keys.forEach(k => { if (s.indexOf(k) >= 0) { score += k.length; hits.push(k); } });
+    if (s.indexOf(t.title) >= 0) score += t.title.length;
+    if (score > bestScore) { bestScore = score; best = t; bestHits = hits; }
+  });
+  if (!best) return null;
+  const pct = Math.min(98, 84 + bestScore * 2);
+  return { topic: best, hits: bestHits, score: bestScore, pct: pct };
+}
+
+/* 命中关键词高亮（先转义再替换，关键词本身来自内置库，安全） */
+function hl(text, hits) {
+  let out = esc(text);
+  (hits || []).forEach(k => {
+    const safe = esc(k);
+    if (!safe) return;
+    out = out.split(safe).join('<mark class="kw">' + safe + '</mark>');
+  });
+  return out;
+}
+
+const CASE_COLOR = {
+  rose: 'bg-rose-50 text-rose-700 border-rose-100',
+  amber: 'bg-amber-50 text-amber-700 border-amber-100',
+  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100'
+};
+
+/* 未命中 / 空检索时的引导态 */
+function renderCaseMiss(q, empty) {
+  $('#case-hit').innerHTML = `
+    <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-amber-600 flex-none">${icon('<path d="M12 9v4M12 16.5v.2M10.3 3.9L2.5 18a2 2 0 001.7 3h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>', 16)}</span>
+        <span class="text-[13.5px] font-semibold text-amber-800">
+          ${empty ? '请输入要检索的争议情形' : '未命中类案专题：' + esc(q)}
+        </span>
+      </div>
+      <p class="text-[13px] leading-6 text-amber-900">当前垂直语料库覆盖以下 6 类高频劳动争议，点击即可检索：</p>
+      <div class="flex flex-wrap gap-2 mt-3">
+        ${DATA.caseTopics.map(t => `<span class="chip px-3 py-1.5 rounded-full text-[12.5px] bg-white" data-case-topic="${t.id}">${t.title}</span>`).join('')}
+      </div>
+      <p class="text-[12px] text-amber-700/80 mt-3">提示：本原型为演示环境，仅内置上述专题；正式版将接入 1,286 份全量裁判文书库全文检索。</p>
+    </div>`;
+  $('#case-topic').textContent = '';
+  $('#case-corpus').textContent = '0';
+  $('#case-tendency').innerHTML = '';
+  $('#case-gist').textContent = '';
+  $('#case-count').textContent = '';
+  $('#case-list').innerHTML = `<div class="text-center text-[13px] text-slate-400 py-12">暂无结果，请调整检索词</div>`;
+}
 
 function renderCases() {
-  // 倾向预判
-  const maxPct = Math.max.apply(null, DATA.caseTendency.map(t => t.pct));
-  $('#case-tendency').innerHTML = DATA.caseTendency.map(t => `
+  const q = $('#case-query').value.trim();
+
+  if (!q) { caseLastQuery = q; renderCaseMiss('', true); return; }
+
+  const m = matchCaseTopic(q);
+  if (!m) { caseLastQuery = q; renderCaseMiss(q, false); return; }
+
+  caseTopic = m.topic;
+  caseHits = m.hits;
+  caseLastQuery = q;
+
+  // ① 命中提示条
+  $('#case-hit').innerHTML = `
+    <div class="rounded-xl border border-brand-200 bg-gradient-to-r from-brand-50 to-white p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="tag bg-brand-600 text-white text-[11px]">已命中专题</span>
+        <span class="text-[13.5px] font-semibold text-brand-900">${caseTopic.title}</span>
+        <span class="ml-auto text-[11.5px] text-slate-500 max-w-[46%] truncate">检索：${esc(q)}</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 mt-2.5">
+        <span class="text-[11.5px] text-slate-500">命中关键词</span>
+        ${caseHits.map(h => `<span class="tag bg-white text-brand-700 border border-brand-100">${esc(h)}</span>`).join('')}
+        <span class="ml-auto text-[11.5px] text-slate-400">相关度 ${m.pct}% · 检索耗时 0.9s · 语料库命中 ${caseTopic.corpus.toLocaleString()} 份</span>
+      </div>
+    </div>`;
+
+  // ② 倾向预判（随专题变化）
+  $('#case-topic').textContent = caseTopic.title;
+  $('#case-corpus').textContent = caseTopic.corpus.toLocaleString();
+  const maxPct = Math.max.apply(null, caseTopic.tendency.map(t => t.pct));
+  $('#case-tendency').innerHTML = caseTopic.tendency.map(t => `
     <div>
       <div class="flex items-center justify-between text-[13px] mb-2">
         <span class="text-slate-600">${t.name}</span>
@@ -2171,32 +2640,121 @@ function renderCases() {
       </div>
       <div class="stat-bar"><i style="width:${(t.pct / maxPct) * 100}%;background:${t.color}"></i></div>
     </div>`).join('');
-  $('#case-gist').textContent = DATA.caseGist;
+  $('#case-gist').textContent = caseTopic.gist;
 
-  // 类案清单
-  const list = DATA.cases.filter(c =>
+  // ③ 类案清单（年份 / 层级筛选 + 可展开详情）
+  const list = caseTopic.cases.filter(c =>
     (caseYear === '全部' || c.year === caseYear) &&
     (caseLevel === '全部' || c.level === caseLevel));
   $('#case-count').textContent = `命中 ${list.length} 篇相关裁判文书`;
+  caseList = list;
 
-  const COLOR = {
-    rose: 'bg-rose-50 text-rose-700 border-rose-100',
-    amber: 'bg-amber-50 text-amber-700 border-amber-100',
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100'
-  };
-
-  $('#case-list').innerHTML = list.length ? list.map(c => `
-    <div class="rounded-xl border border-[#eef1f7] hover:border-brand-200 hover:shadow-[0_2px_10px_rgba(16,24,40,.05)] transition p-4 cursor-pointer">
-      <div class="flex items-start gap-3">
+  $('#case-list').innerHTML = list.length ? list.map((c, i) => `
+    <div class="case-item rounded-xl border border-[#eef1f7] hover:border-brand-200 hover:shadow-[0_2px_10px_rgba(16,24,40,.05)] transition p-4" data-case-idx="${i}">
+      <div class="flex items-start gap-3 cursor-pointer" data-case-toggle="${i}">
         <div class="min-w-0 flex-1">
-          <div class="text-[14px] font-medium text-ink truncate">${c.title}</div>
+          <div class="text-[14px] font-medium text-ink">${hl(c.title, caseHits)}</div>
           <div class="text-[12px] text-slate-400 mt-1">${c.no} · ${c.court} · ${c.year}</div>
-          <p class="text-[13px] leading-6 text-slate-600 mt-2">${c.gist}</p>
+          <p class="text-[13px] leading-6 text-slate-600 mt-2">${hl(c.gist, caseHits)}</p>
         </div>
-        <span class="tag ${COLOR[c.color]} border flex-none">${c.result}</span>
+        <div class="flex items-center gap-2 flex-none">
+          <span class="tag ${CASE_COLOR[c.color]} border">${c.result}</span>
+          <span class="case-caret text-slate-300 transition-transform">${icon('<path d="M6 9l6 6 6-6"/>', 15)}</span>
+        </div>
+      </div>
+
+      <div class="case-body hidden mt-4 pt-4 border-t border-[#f2f5fa]">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="text-[12px] font-semibold text-brand-600 mb-2">裁判要点</div>
+            <ul class="space-y-2">
+              ${(c.points || []).map(p => `
+                <li class="flex gap-2 text-[12.5px] leading-6 text-slate-600">
+                  <span class="text-brand-400 flex-none mt-[3px]">${icon('<path d="M5 12l4 4L19 6"/>', 12)}</span>
+                  <span>${hl(p, caseHits)}</span>
+                </li>`).join('')}
+            </ul>
+          </div>
+          <div class="space-y-3">
+            <div class="rounded-xl bg-slate-50 border border-[#eef1f7] p-3">
+              <div class="text-[12px] text-slate-400 mb-1">裁判结果</div>
+              <div class="text-[13px] font-medium text-ink">${c.amount || c.result}</div>
+            </div>
+            <div>
+              <div class="text-[12px] text-slate-400 mb-2">争议焦点</div>
+              <div class="flex flex-wrap gap-2">
+                ${(c.tags || []).map(t => `<span class="tag bg-slate-100 text-slate-600">${t}</span>`).join('')}
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button class="h-8 px-3 rounded-lg border border-brand-200 text-brand-700 text-[12px] hover:bg-brand-50 transition" data-case-quote="${i}">引用到法律分析报告</button>
+              <button class="h-8 px-3 rounded-lg border border-[#dde3ee] text-slate-600 text-[12px] hover:bg-slate-50 transition" data-case-copy="${i}">复制案号</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>`).join('')
     : `<div class="text-center text-[13px] text-slate-400 py-12">当前筛选条件下暂无命中，请调整年份或法院层级</div>`;
+}
+
+/* 按专题 id 直接检索（引导态里的专题快捷入口使用） */
+function searchCaseTopicById(id) {
+  const t = DATA.caseTopics.filter(x => x.id === id)[0];
+  if (!t) return;
+  $('#case-query').value = t.title;
+  renderCases();
+}
+
+/* 轻提示 */
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('is-in'));
+  setTimeout(() => el.classList.remove('is-in'), 2200);
+  setTimeout(() => el.remove(), 2600);
+}
+
+/* 引用类案到法律分析报告（跨模块联动） */
+function quoteCaseToReport(idx) {
+  const c = caseList[idx];
+  if (!c) return;
+  if (DATA.reportQuotes.indexOf(c.no) < 0) DATA.reportQuotes.push(c.no);
+  renderQuotesBar();
+  toast('已引用类案 ' + c.no + ' 至法律分析报告');
+  goPage('report');
+  // 若报告已生成，同步刷新其中的参考类案章节
+  if ($('#report-paper')) renderReport();
+}
+
+/* 复制案号 */
+function copyCaseNo(idx) {
+  const c = caseList[idx];
+  if (!c) return;
+  const done = () => toast('已复制案号：' + c.no);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(c.no).then(done, () => { toast('案号：' + c.no); });
+  } else {
+    toast('案号：' + c.no);
+  }
+}
+
+/* 报告页顶部的「已引用类案」提示条 */
+function renderQuotesBar() {
+  const box = $('#rpt-quotes');
+  if (!box) return;
+  if (!DATA.reportQuotes.length) { box.innerHTML = ''; return; }
+  const items = DATA.reportQuotes.map(no => {
+    const c = DATA.caseTopics.reduce((acc, t) => acc.concat(t.cases), []).filter(x => x.no === no)[0] || {};
+    return `<span class="tag bg-white text-brand-700 border border-brand-100">${no}${c.title ? ' · ' + c.title : ''}</span>`;
+  }).join('');
+  box.innerHTML = `
+    <div class="rounded-xl border border-brand-200 bg-brand-50/60 p-3 flex flex-wrap items-center gap-2">
+      <span class="tag bg-brand-600 text-white text-[11px]">已引用类案 ${DATA.reportQuotes.length} 份</span>
+      ${items}
+      <button class="ml-auto text-[11.5px] text-slate-400 hover:text-rose-500 transition" data-quote-clear="1">清空</button>
+    </div>`;
 }
 
 /* ---------- 智能咨询 ---------- */
@@ -2442,10 +3000,32 @@ function renderReport() {
         </div>
       </div>
 
+      ${DATA.reportQuotes.length ? `
+      <!-- 参考类案（来自类案检索智库的引用） -->
+      <div class="mt-6">
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-violet-500"></span>五、参考类案</h3>
+        <div class="space-y-2">
+          ${DATA.reportQuotes.map(no => {
+            const all = DATA.caseTopics.reduce((acc, t) => acc.concat(t.cases), []);
+            const c = all.filter(x => x.no === no)[0] || { no: no, title: '', gist: '', amount: '' };
+            return `<div class="rounded-xl border border-[#eef1f7] p-3.5">
+              <div class="flex items-start gap-3">
+                <div class="min-w-0 flex-1">
+                  <div class="text-[13px] font-medium text-ink">${c.title || '类案'}</div>
+                  <div class="text-[11.5px] text-slate-400 mt-0.5">${c.no}</div>
+                  <p class="text-[12.5px] leading-6 text-slate-600 mt-1.5">${c.gist || ''}</p>
+                </div>
+                <span class="tag bg-violet-50 text-violet-700 border border-violet-100 flex-none">${c.amount || '参见裁判文书'}</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
+
       <!-- 落款 -->
       <div class="mt-8 pt-5 border-t border-[#e5e8f0] flex items-end justify-between">
         <div class="text-[11px] text-slate-400 leading-6">
-          本报告由「外服法务通」AI 引擎自动生成，匹配 512 城属地政策库与 1,286 份类案。<br/>
+          本报告由「外服法务通」AI 引擎自动生成，匹配 512 城属地政策库与 ${DATA.caseTopics.reduce((s, t) => s + t.corpus, 0).toLocaleString()} 份类案${DATA.reportQuotes.length ? '，引用类案 ' + DATA.reportQuotes.length + ' 份' : ''}。<br/>
           内容仅供参考，重大决策建议由领域专家复核后执行。
         </div>
         <div class="text-[12px] text-slate-500 text-right">
@@ -2629,14 +3209,51 @@ function bindEvents() {
     if (e.target.classList.contains('law-check')) updateLawProgress();
   });
 
-  /* --- 类案检索 --- */
+  /* --- 类案检索：检索 + 展开详情 + 引用到报告 --- */
   $('#case-btn').addEventListener('click', renderCases);
   $('#case-query').addEventListener('keydown', e => { if (e.key === 'Enter') renderCases(); });
   document.addEventListener('click', e => {
+    // 年份 / 层级筛选
     const y = e.target.closest('[data-case-year]');
-    if (y) { caseYear = y.dataset.caseYear; $$('[data-case-year]').forEach(x => x.classList.toggle('is-on', x === y)); renderCases(); }
+    if (y) { caseYear = y.dataset.caseYear; $$('[data-case-year]').forEach(x => x.classList.toggle('is-on', x === y)); renderCases(); return; }
     const l = e.target.closest('[data-case-level]');
-    if (l) { caseLevel = l.dataset.caseLevel; $$('[data-case-level]').forEach(x => x.classList.toggle('is-on', x === l)); renderCases(); }
+    if (l) { caseLevel = l.dataset.caseLevel; $$('[data-case-level]').forEach(x => x.classList.toggle('is-on', x === l)); renderCases(); return; }
+
+    // 常用检索快捷片
+    const cq = e.target.closest('[data-case-quick]');
+    if (cq) { $('#case-query').value = cq.dataset.caseQuick; renderCases(); return; }
+
+    // 引导态里的专题快捷入口
+    const ct = e.target.closest('[data-case-topic]');
+    if (ct) { searchCaseTopicById(ct.dataset.caseTopic); return; }
+
+    // 展开 / 收起类案详情（直接操作 DOM，避免重排）
+    const tg = e.target.closest('[data-case-toggle]');
+    if (tg && !e.target.closest('[data-case-quote]') && !e.target.closest('[data-case-copy]')) {
+      const item = tg.closest('.case-item');
+      const body = item.querySelector('.case-body');
+      const open = body.classList.contains('hidden');
+      body.classList.toggle('hidden', !open);
+      item.classList.toggle('is-open', open);
+      return;
+    }
+
+    // 引用该案到法律分析报告
+    const q = e.target.closest('[data-case-quote]');
+    if (q) { quoteCaseToReport(Number(q.dataset.caseQuote)); return; }
+
+    // 复制案号
+    const cp = e.target.closest('[data-case-copy]');
+    if (cp) { copyCaseNo(Number(cp.dataset.caseCopy)); return; }
+  });
+
+  // 清空已引用类案
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-quote-clear]')) return;
+    DATA.reportQuotes.length = 0;
+    renderQuotesBar();
+    if ($('#report-paper')) renderReport();
+    toast('已清空引用类案');
   });
 
   /* --- 智能咨询 --- */
@@ -2698,6 +3315,7 @@ function init() {
   renderCityPicker();
   renderLaw();
   renderCases();
+  renderQuotesBar();
   renderExperts();
   renderAbout();
   bindEvents();
