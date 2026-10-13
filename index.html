@@ -151,6 +151,24 @@ body {
   color: var(--c-brand);
   font-weight: 600;
 }
+/* 筛选片内的命中数量角标 */
+.chip-n {
+  display: inline-block;
+  min-width: 16px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #eef1f7;
+  color: #64748b;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 15px;
+  text-align: center;
+}
+.chip.is-on .chip-n {
+  background: #2563eb;
+  color: #fff;
+}
 
 /* 类案卡片：展开态与命中关键词高亮 */
 .case-caret {
@@ -623,16 +641,13 @@ mark.kw {
 
           <div id="case-hit" class="mt-4"></div>
 
+          <!-- 筛选栏：选项与命中数由当前专题的案例数据动态生成，避免出现「点了没反应」的死选项 -->
           <div class="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-[#eef1f7] text-[12px]">
             <span class="text-slate-400 mr-1">裁判年份</span>
-            <span class="chip px-3 py-1 rounded-full is-on" data-case-year="全部">全部</span>
-            <span class="chip px-3 py-1 rounded-full" data-case-year="2025">2025</span>
-            <span class="chip px-3 py-1 rounded-full" data-case-year="2024">2024</span>
-            <span class="chip px-3 py-1 rounded-full" data-case-year="2023">2023</span>
+            <div id="case-years" class="flex flex-wrap gap-2"></div>
             <span class="text-slate-400 ml-4 mr-1">法院层级</span>
-            <span class="chip px-3 py-1 rounded-full is-on" data-case-level="全部">全部</span>
-            <span class="chip px-3 py-1 rounded-full" data-case-level="高级人民法院">高院</span>
-            <span class="chip px-3 py-1 rounded-full" data-case-level="中级人民法院">中院</span>
+            <div id="case-levels" class="flex flex-wrap gap-2"></div>
+            <span id="case-filter-tip" class="ml-auto text-[11.5px] text-slate-400"></span>
           </div>
         </div>
 
@@ -658,9 +673,11 @@ mark.kw {
               <span class="w-1 h-4 rounded bg-brand-500"></span>
               <h3 class="font-semibold text-[15px]">类案清单</h3>
               <span class="text-[11.5px] text-slate-400 ml-1">点击卡片展开裁判要点</span>
+              <button id="case-clear" class="hidden h-7 px-3 rounded-lg border border-[#dde3ee] text-slate-600 text-[11.5px] hover:border-brand-300 hover:text-brand-700 transition">清除筛选</button>
               <span id="case-count" class="ml-auto text-[12px] text-slate-400"></span>
             </div>
             <div id="case-list" class="space-y-3"></div>
+            <p class="text-[11px] text-slate-400 mt-4 pt-3 border-t border-[#f2f5fa]">※ 演示环境内置 6 大专题共 60 篇裁判文书（每专题 10 篇，覆盖最高院至基层院、2021—2025 年）；正式版将接入全量文书库全文检索。</p>
           </div>
         </div>
       </section>
@@ -1730,6 +1747,46 @@ const DATA = {
           amount: '判付赔偿金 19,500 元',
           tags: ['录用条件笼统', '标准不可量化'],
           points: ['“符合岗位要求”“胜任工作”等表述不构成明确的录用条件', '考核标准应具体到可衡量的产出要求或量化指标', '标准不明确的举证不利后果由用人单位承担']
+        },
+        {
+          no: '（2025）最高法民申2108号', court: '最高人民法院', year: '2025', level: '最高人民法院', result: '支持劳动者', color: 'rose',
+          title: '试用期解除举证责任分配再审审查案',
+          gist: '最高法明确：以“不符合录用条件”解除的举证责任在用人单位，须同时证明条件明确、考核客观、程序合法。',
+          amount: '驳回再审申请，维持违法解除认定',
+          tags: ['举证责任分配', '三项要件'],
+          points: ['“不符合录用条件”的举证责任由用人单位承担，不能以劳动者未能自证胜任为由转移', '录用条件明确、考核依据客观、解除程序合法三项要件须同时具备', '用人单位内部审批耗时不能作为超期解除的免责理由']
+        },
+        {
+          no: '（2024）粤0305民初6621号', court: '深圳市南山区人民法院', year: '2024', level: '基层人民法院', result: '支持劳动者', color: 'rose',
+          title: '试用期未书面告知录用条件一审案',
+          gist: '公司仅口头告知录用条件且无任何签收材料，一审认定违法解除，判付赔偿金 21,600 元。',
+          amount: '判付赔偿金 21,600 元',
+          tags: ['口头告知不采信', '无签收材料'],
+          points: ['口头告知录用条件在举证上基本不被采信', '录用条件确认书应在入职时签署并留存原件', '一审事实认定清楚的，二审通常不作改动']
+        },
+        {
+          no: '（2022）苏01民终7712号', court: '南京市中级人民法院', year: '2022', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '试用期延长后解除争议案',
+          gist: '未经协商一致单方延长试用期，延长期限无效，该期间按正式期标准审查后酌减赔偿。',
+          amount: '酌减后判付赔偿金 28,000 元',
+          tags: ['试用期延长', '期限无效'],
+          points: ['试用期延长须经双方协商一致且不得超过法定上限', '单方延长的部分无效，该期间按正式期履行审查', '违法解除的认定与赔偿数额的计算是两个独立环节']
+        },
+        {
+          no: '（2023）浙0110民初3387号', court: '杭州市余杭区人民法院', year: '2023', level: '基层人民法院', result: '支持用人单位', color: 'emerald',
+          title: '电商运营岗量化考核解除案',
+          gist: '公司提供量化 KPI 表、周报记录与员工签收确认，法院认定解除合法。',
+          amount: '解除合法，无需支付赔偿金',
+          tags: ['量化 KPI', '签收确认'],
+          points: ['考核指标可量化（如转化率、完成率）并经员工确认的，可作为解除依据', '过程记录（周报、月度评估）能够印证考核结论的形成过程', '解除决定在试用期届满前送达并保留凭证']
+        },
+        {
+          no: '（2021）京民申3320号', court: '北京市高级人民法院', year: '2021', level: '高级人民法院', result: '支持劳动者', color: 'rose',
+          title: '试用期考核制度未经公示解除案',
+          gist: '考核制度未履行公示或告知程序，不能作为解除依据，认定违法解除。',
+          amount: '判付赔偿金 33,000 元',
+          tags: ['制度未公示', '依据不能成立'],
+          points: ['考核制度作为解除依据，须经民主程序并公示或告知劳动者', '无公示留痕的，不能以“新人应知悉”推定其已被告知', '制度瑕疵的举证责任在用人单位']
         }
       ]
     },
@@ -1784,6 +1841,46 @@ const DATA = {
           amount: '仅支持法定节假日加班费',
           tags: ['不定时工作制', '加班范围限缩'],
           points: ['经审批实行不定时工作制的岗位，通常不适用延时加班费', '法定节假日安排工作仍须支付加班费', '企业主张适用特殊工时的，应提供审批文件原件']
+        },
+        {
+          no: '（2025）京02民终3390号', court: '北京市第二中级人民法院', year: '2025', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '电子考勤记录认定加班案',
+          gist: '员工提交经公证的企业微信打卡记录，法院采信加班事实，未审批部分酌减。',
+          amount: '酌减后判付加班费 47,300 元',
+          tags: ['电子证据公证', '未经审批酌减'],
+          points: ['经公证的电子考勤、办公系统日志可作为加班事实的证据', '未经审批的加班不当然无效，应结合实际工作成果综合认定', '酌减幅度通常参考岗位性质与管理惯例']
+        },
+        {
+          no: '（2024）最高法民申1502号', court: '最高人民法院', year: '2024', level: '最高人民法院', result: '支持劳动者', color: 'rose',
+          title: '加班费举证责任再审审查案',
+          gist: '最高法重申：用人单位掌握考勤记录而无正当理由拒不提供的，应承担举证不利后果。',
+          amount: '驳回再审申请，维持判付加班费',
+          tags: ['考勤由单位掌握', '举证不利后果'],
+          points: ['劳动者已完成初步举证的，考勤记录的举证责任转移至用人单位', '以“系统数据已覆盖”“无存档义务”抗辩的，多数不被采信', '用人单位拒不提供的，可直接采信劳动者主张的合理时长']
+        },
+        {
+          no: '（2023）粤0304民初11890号', court: '深圳市福田区人民法院', year: '2023', level: '基层人民法院', result: '支持劳动者', color: 'rose',
+          title: '销售岗不定时工时未经审批案',
+          gist: '公司对销售岗主张不定时工作制但无审批文件，一审按标准工时计付加班费。',
+          amount: '判付加班费差额 62,800 元',
+          tags: ['特殊工时未审批', '按标准工时计付'],
+          points: ['不定时工作制须经人社部门审批，仅有内部制度规定不产生效力', '未经审批期间一律按标准工时核算加班费', '销售提成不替代加班费支付义务']
+        },
+        {
+          no: '（2022）沪01民终5541号', court: '上海市第一中级人民法院', year: '2022', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '高管加班审批缺失争议案',
+          gist: '岗位实行审批制且无任何加班申请记录，亦无实际加班佐证，法院驳回加班费请求。',
+          amount: '驳回加班费请求',
+          tags: ['审批制未申请', '举证不足'],
+          points: ['企业实行加班审批制的，未经申请的延时工作一般不予认定', '劳动者需提供实际加班的工作记录或成果予以佐证', '高管岗位的自主要求不宜等同于用人单位安排']
+        },
+        {
+          no: '（2021）苏民申2207号', court: '江苏省高级人民法院', year: '2021', level: '高级人民法院', result: '支持劳动者', color: 'rose',
+          title: '计件工资加班费差额案',
+          gist: '计件定额外的延长工时未另付加班费，高院认定应按法定标准补足差额。',
+          amount: '判付加班费差额 35,600 元',
+          tags: ['计件工资', '定额外工时'],
+          points: ['计件工资制下，法定标准工时外完成定额任务的应另付加班费', '定额标准的合理性由用人单位举证，畸高定额可被调整', '加班费基数按正常工作时间对应的计件单价折算']
         }
       ]
     },
@@ -1838,6 +1935,46 @@ const DATA = {
           amount: '竞业限制解除，不承担违约责任',
           tags: ['未付补偿', '劳动者解除权'],
           points: ['用人单位三个月未支付补偿的，劳动者可请求解除竞业限制约定', '解除需经书面通知，口头主张难以产生解除效力', '已履行期间的补偿仍可主张']
+        },
+        {
+          no: '（2025）京01民终1176号', court: '北京市第一中级人民法院', year: '2025', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '违约金与继续履行并罚案',
+          gist: '员工入职竞对且在竞业期内，法院判令支付违约金并继续履行剩余期限义务。',
+          amount: '判付违约金 52 万元，继续履行竞业义务',
+          tags: ['并罚', '继续履行'],
+          points: ['支付违约金不当然免除继续履行竞业限制的义务', '剩余竞业期限的履行请求，法院通常予以支持', '违约责任与竞业期限届满相互独立']
+        },
+        {
+          no: '（2024）最高法民申3305号', court: '最高人民法院', year: '2024', level: '最高人民法院', result: '支持用人单位', color: 'emerald',
+          title: '竞业补偿标准约定效力再审案',
+          gist: '最高法认为约定补偿虽低于月均工资 30%，但已高于当地最低工资且劳动者实际领取，条款有效。',
+          amount: '竞业限制条款有效',
+          tags: ['补偿标准', '意思自治'],
+          points: ['补偿标准约定可低于月均工资 30%，但不得低于当地最低工资', '劳动者已实际领取且未提出异议的，视为接受该标准', '过低的补偿经劳动者主张可予调整，但不影响条款效力']
+        },
+        {
+          no: '（2023）浙0106民初2211号', court: '杭州市西湖区人民法院', year: '2023', level: '基层人民法院', result: '支持劳动者', color: 'rose',
+          title: '未接触商业秘密岗位竞业条款无效案',
+          gist: '一审认定行政岗未接触商业秘密，竞业限制条款无效，驳回企业违约金请求。',
+          amount: '条款无效，无需支付违约金',
+          tags: ['主体不适格', '未接触秘密'],
+          points: ['竞业限制适用于高管、高级技术人员和其他负有保密义务的人员', '企业须举证劳动者实际接触商业秘密，仅凭岗位名称不足', '条款无效的，已支付的补偿一般无需返还']
+        },
+        {
+          no: '（2022）粤01民终8823号', court: '广州市中级人民法院', year: '2022', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '竞业期限超过两年部分无效案',
+          gist: '约定竞业期限 3 年，法院认定超过 2 年的部分无效，按 2 年期间核算违约金。',
+          amount: '超出 2 年部分无效，违约金按比例调整',
+          tags: ['期限超限', '部分无效'],
+          points: ['竞业限制期限最长不得超过 2 年，超出部分无效', '无效部分的违约金应相应调减', '期限起算点通常为劳动关系解除或终止之日']
+        },
+        {
+          no: '（2021）沪民申4410号', court: '上海市高级人民法院', year: '2021', level: '高级人民法院', result: '部分支持', color: 'amber',
+          title: '企业单方放弃竞业限制补偿责任案',
+          gist: '企业声明放弃竞业要求但未书面通知，员工履行期间仍可主张补偿，责任按实际履行期核算。',
+          amount: '按实际履行期支付竞业补偿',
+          tags: ['单方放弃', '补偿责任'],
+          points: ['用人单位可解除竞业限制，但须以书面形式明确通知劳动者', '未通知期间劳动者实际履行的，仍有权主张补偿', '补偿责任按实际履行的月份核算，不因内部决议而免除']
         }
       ]
     },
@@ -1892,6 +2029,46 @@ const DATA = {
           amount: '判付赔偿金 72,000 元',
           tags: ['优先留用义务', '裁员名单争议'],
           points: ['应优先留用长期固定期限合同、无固定期限合同及家庭困难员工', '裁员名单的形成应有客观标准与书面依据', '违反优先留用规定的，可被认定为裁员对象选择违法']
+        },
+        {
+          no: '（2025）京03民终2287号', court: '北京市第三中级人民法院', year: '2025', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '程序完备依法裁员案',
+          gist: '公司提前 30 日说明情况、听取意见并向人社部门报告，法院认定裁员合法。',
+          amount: '裁员合法，支付经济补偿',
+          tags: ['程序完备', '合法裁员'],
+          points: ['提前 30 日说明、听取意见、报告方案三项程序缺一不可', '说明会签到表、意见汇总、报告回执构成完整程序证据链', '程序合法的裁员仅需支付经济补偿（N），无需支付赔偿金']
+        },
+        {
+          no: '（2024）最高法民申2776号', court: '最高人民法院', year: '2024', level: '最高人民法院', result: '支持劳动者', color: 'rose',
+          title: '裁员优先留用义务再审审查案',
+          gist: '最高法明确：优先留用是法定义务，用人单位须举证已履行，否则裁员名单不具合法性。',
+          amount: '驳回再审申请，维持违法解除认定',
+          tags: ['优先留用', '举证责任'],
+          points: ['是否符合优先留用条件及是否实际留用，举证责任在用人单位', '以“岗位匹配度”为由排除法定优先留用人员，须有客观依据', '违反优先留用规定可导致个别解除被认定违法']
+        },
+        {
+          no: '（2023）苏0102民初5560号', court: '南京市玄武区人民法院', year: '2023', level: '基层人民法院', result: '支持劳动者', color: 'rose',
+          title: '裁减人数未达法定比例违法解除案',
+          gist: '实际裁减 8 人、占比 6%，一审认定不属经济性裁员，按个别解除标准审查后认定违法。',
+          amount: '判付赔偿金 88,000 元',
+          tags: ['比例未达标', '程序误用'],
+          points: ['裁减不足 20 人且未达职工总数 10% 的，不适用经济性裁员程序', '程序误用且未满足个别解除的实体条件，构成违法解除', '企业以“批量优化”名义规避法定标准的风险较高']
+        },
+        {
+          no: '（2022）粤03民终9917号', court: '深圳市中级人民法院', year: '2022', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '裁员后未足额支付经济补偿案',
+          gist: '裁员程序合法但经济补偿按基本工资计算，法院按实际月均工资补足差额。',
+          amount: '补足经济补偿差额 26,400 元',
+          tags: ['补偿基数', '补足差额'],
+          points: ['经济补偿基数按解除前十二个月平均工资计算，不限于基本工资', '奖金、津贴等常规性收入应计入补偿基数', '程序合法不免除足额支付补偿的义务']
+        },
+        {
+          no: '（2021）浙民申3388号', court: '浙江省高级人民法院', year: '2021', level: '高级人民法院', result: '支持劳动者', color: 'rose',
+          title: '以客观情况重大变化掩盖裁员案',
+          gist: '以“客观情况发生重大变化”逐人解除规避裁员程序，高院认定实质属经济性裁员，程序违法。',
+          amount: '认定违法解除，判付赔偿金 130,000 元',
+          tags: ['程序规避', '实质认定'],
+          points: ['实质符合经济性裁员要件的，不因拆分为个别解除而免除程序义务', '“客观情况重大变化”须为不可归责于企业的外部变化', '司法审查重实质，形式化处理难以获得支持']
         }
       ]
     },
@@ -1946,6 +2123,46 @@ const DATA = {
           amount: '按法定口径重新核定比例',
           tags: ['用工总量口径', '比例核定'],
           points: ['用工总量＝订立劳动合同人数 + 使用的被派遣劳动者人数', '不得以“外包人员不计入”等方式规避比例限制', '比例超标的整改应有明确计划与时间表']
+        },
+        {
+          no: '（2025）沪01民终4462号', court: '上海市第一中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '超比例被处罚后用工关系认定案',
+          gist: '企业因超比例派遣被行政处罚，法院据此认定与派遣工构成事实劳动关系并判付补偿。',
+          amount: '认定事实劳动关系，判付补偿 68,000 元',
+          tags: ['行政处罚', '事实劳动关系'],
+          points: ['人社部门的整改通知、处罚决定可作为超比例用工的证据', '超比例且长期稳定用工的，劳动者可主张事实劳动关系', '被认定事实劳动关系后，工龄连续计算并承担经济补偿责任']
+        },
+        {
+          no: '（2024）最高法民申1988号', court: '最高人民法院', year: '2024', level: '最高人民法院', result: '支持劳动者', color: 'rose',
+          title: '派遣工同工同酬再审审查案',
+          gist: '最高法明确：同工同酬的举证责任在用工单位，无法说明差异合理性的应补足差额。',
+          amount: '驳回再审申请，维持补足差额',
+          tags: ['同工同酬', '举证责任'],
+          points: ['用工单位对同类岗位实行相同报酬分配办法负有举证责任', '以“派遣身份不同”作为差异理由的，一般不成立', '差额可追溯至劳动者主张之日起一年内的期间']
+        },
+        {
+          no: '（2023）粤0306民初7790号', court: '深圳市宝安区人民法院', year: '2023', level: '基层人民法院', result: '支持劳动者', color: 'rose',
+          title: '假外包真派遣认定案',
+          gist: '外包协议约定人员管理、考勤、薪酬均由用工方负责，一审认定构成劳务派遣。',
+          amount: '认定劳务派遣关系，补付待遇差额',
+          tags: ['假外包真派遣', '用工管理实质'],
+          points: ['判断派遣与外包看用工管理实质：指挥、考勤、薪酬发放由谁负责', '名为外包实为派遣的，适用派遣相关规定并受比例限制', '外包协议条款与实际履行不一致时，以实际履行为准']
+        },
+        {
+          no: '（2022）京02民终6655号', court: '北京市第二中级人民法院', year: '2022', level: '中级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '辅助性岗位界定争议案',
+          gist: '公司提供职代会讨论记录与岗位公示材料，法院认定辅助性岗位界定成立。',
+          amount: '派遣关系合法有效',
+          tags: ['辅助性岗位合规', '民主程序留痕'],
+          points: ['辅助性岗位须经职代会或全体职工讨论确定并公示', '讨论记录、公示照片、员工签收构成程序证据', '岗位性质属于主营业务还是辅助业务，按实际职能判断']
+        },
+        {
+          no: '（2021）苏民申1123号', court: '江苏省高级人民法院', year: '2021', level: '高级人民法院', result: '部分支持', color: 'amber',
+          title: '派遣与用工单位连带责任范围案',
+          gist: '高院明确连带责任范围限于给劳动者造成损害的赔偿部分，不含用工单位自身的管理过失罚则。',
+          amount: '两单位在损害范围内承担连带责任',
+          tags: ['连带责任范围', '责任划分'],
+          points: ['派遣单位与用工单位对劳动者损害承担连带赔偿责任', '连带范围以劳动者的实际损失为限，可内部追偿', '用工单位对同工同酬、劳动保护等事项负主要管理责任']
         }
       ]
     },
@@ -2000,6 +2217,46 @@ const DATA = {
           amount: '判付赔偿金 53,000 元',
           tags: ['未经申辩', '正当程序'],
           points: ['作出解除决定前应给予劳动者陈述与申辩的机会', '考勤异常可能存在客观原因，未核实即解除构成程序失当', '调查笔录、谈话记录是程序正当的关键留痕']
+        },
+        {
+          no: '（2025）粤01民终3391号', court: '广州市中级人民法院', year: '2025', level: '中级人民法院', result: '支持劳动者', color: 'rose',
+          title: '规章制度未经民主程序解除案',
+          gist: '员工手册未经过职代会讨论，法院认定制度不能作为解除依据。',
+          amount: '判付赔偿金 76,000 元',
+          tags: ['民主程序缺失', '制度无效'],
+          points: ['规章制度须经职代会或全体职工讨论并留存记录', '仅由管理层签发的制度，不能作为解除依据', '制度效力瑕疵与违纪事实是否成立须分别审查']
+        },
+        {
+          no: '（2024）最高法民申2650号', court: '最高人民法院', year: '2024', level: '最高人民法院', result: '支持劳动者', color: 'rose',
+          title: '严重违纪认定标准再审审查案',
+          gist: '最高法强调“严重”应有制度依据并遵循过罚相当，轻微违纪直接解除不被支持。',
+          amount: '驳回再审申请，维持违法解除认定',
+          tags: ['过罚相当', '严重性标准'],
+          points: ['“严重违纪”须有明确制度依据，且与行为后果相当', '未造成实际损失或影响的一次性轻微行为，通常不构成严重违纪', '企业应先经警告、记过等梯度处理']
+        },
+        {
+          no: '（2023）京0105民初8824号', court: '北京市朝阳区人民法院', year: '2023', level: '基层人民法院', result: '支持用人单位', color: 'emerald',
+          title: '提供虚假学历解除案',
+          gist: '员工入职时提供虚假学历，一审认定构成欺诈，解除合法。',
+          amount: '解除合法，无需支付赔偿金',
+          tags: ['入职欺诈', '诚信义务'],
+          points: ['提供虚假学历、工作经历构成欺诈，劳动合同可解除', '企业应在录用条件中明确学历、资质为录用前提', '学历验证记录是用人单位举证的重要材料']
+        },
+        {
+          no: '（2022）沪02民终7738号', court: '上海市第二中级人民法院', year: '2022', level: '中级人民法院', result: '部分支持', color: 'amber',
+          title: '违纪解除未通知工会案',
+          gist: '未事先通知工会，但补正程序后获得工会复函，法院酌减赔偿责任。',
+          amount: '酌减后判付赔偿金 39,000 元',
+          tags: ['程序补正', '通知工会'],
+          points: ['单方解除应事先通知工会，事后补正可减轻责任但不当然免责', '工会复函应载明对解除理由的意见', '程序瑕疵与实体违法应分别评价']
+        },
+        {
+          no: '（2021）浙民申2210号', court: '浙江省高级人民法院', year: '2021', level: '高级人民法院', result: '支持用人单位', color: 'emerald',
+          title: '连续旷工达到解除标准案',
+          gist: '制度明确连续旷工 3 日可解除，考勤与催告记录完整，高院认定解除合法。',
+          amount: '解除合法，无需支付赔偿金',
+          tags: ['旷工解除', '证据完整'],
+          points: ['制度明确量化违纪标准（如连续旷工 3 日）的效力较易获得认可', '考勤记录 + 限期返岗催告通知构成完整证据链', '解除决定书送达并留存签收凭证']
         }
       ]
     }
@@ -2608,6 +2865,170 @@ let caseTopic = DATA.caseTopics[0];
 let caseHits = [];
 let caseLastQuery = '';
 let caseList = [];                 // 当前筛选结果，供展开 / 引用 / 复制定位
+let caseTopicId = '';              // 上次渲染的专题 id，用于判断「是否换专题 → 重置筛选」
+
+/* 法院层级展示标签 */
+const CASE_LEVEL_LABEL = {
+  '最高人民法院': '最高院',
+  '高级人民法院': '高院',
+  '中级人民法院': '中院',
+  '基层人民法院': '基层院'
+};
+
+/* 渲染筛选条：选项与命中数均取自当前专题的真实数据，
+   只列出该专题实际存在的年份与层级，避免出现「点了没反应」的死选项 */
+function renderCaseFilters() {
+  const all = caseTopic.cases;
+  const years = ['全部'].concat(
+    Array.from(new Set(all.map(c => c.year))).sort((a, b) => b - a));
+  const levels = ['全部'].concat(
+    Object.keys(CASE_LEVEL_LABEL).filter(k => all.some(c => c.level === k)));
+
+  const cnt = (type, key) => key === '全部'
+    ? all.length
+    : all.filter(c => (type === 'year' ? c.year === key : c.level === key)).length;
+
+  // 年份片（“全部”显示总篇数，其余显示该年份命中数）
+  $('#case-years').innerHTML = years.map(y => `
+    <span class="chip px-3 py-1 rounded-full ${y === caseYear ? 'is-on' : ''}" data-case-year="${y}">
+      ${y === '全部' ? '全部' : y + ' 年'}<span class="chip-n">${cnt('year', y)}</span>
+    </span>`).join('');
+
+  // 层级片
+  $('#case-levels').innerHTML = levels.map(l => `
+    <span class="chip px-3 py-1 rounded-full ${l === caseLevel ? 'is-on' : ''}" data-case-level="${l}">
+      ${l === '全部' ? '全部' : CASE_LEVEL_LABEL[l]}<span class="chip-n">${cnt('level', l)}</span>
+    </span>`).join('');
+}
+
+function renderCases() {
+  const q = $('#case-query').value.trim();
+
+  if (!q) { caseLastQuery = q; renderCaseMiss('', true); return; }
+
+  const m = matchCaseTopic(q);
+  if (!m) { caseLastQuery = q; renderCaseMiss(q, false); return; }
+
+  // 换专题时重置年份 / 层级筛选，避免带着上一个专题的筛选条件导致「筛选后为空」
+  if (m.topic.id !== caseTopicId) {
+    caseTopicId = m.topic.id;
+    caseYear = '全部';
+    caseLevel = '全部';
+  }
+
+  caseTopic = m.topic;
+  caseHits = m.hits;
+  caseLastQuery = q;
+
+  // ① 命中提示条
+  $('#case-hit').innerHTML = `
+    <div class="rounded-xl border border-brand-200 bg-gradient-to-r from-brand-50 to-white p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="tag bg-brand-600 text-white text-[11px]">已命中专题</span>
+        <span class="text-[13.5px] font-semibold text-brand-900">${caseTopic.title}</span>
+        <span class="ml-auto text-[11.5px] text-slate-500 max-w-[46%] truncate">检索：${esc(q)}</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 mt-2.5">
+        <span class="text-[11.5px] text-slate-500">命中关键词</span>
+        ${caseHits.map(h => `<span class="tag bg-white text-brand-700 border border-brand-100">${esc(h)}</span>`).join('')}
+        <span class="ml-auto text-[11.5px] text-slate-400">相关度 ${m.pct}% · 检索耗时 0.9s · 语料库命中 ${caseTopic.corpus.toLocaleString()} 份</span>
+      </div>
+    </div>`;
+
+  // ② 倾向预判（随专题变化）
+  $('#case-topic').textContent = caseTopic.title;
+  $('#case-corpus').textContent = caseTopic.corpus.toLocaleString();
+  const maxPct = Math.max.apply(null, caseTopic.tendency.map(t => t.pct));
+  $('#case-tendency').innerHTML = caseTopic.tendency.map(t => `
+    <div>
+      <div class="flex items-center justify-between text-[13px] mb-2">
+        <span class="text-slate-600">${t.name}</span>
+        <span class="font-semibold" style="color:${t.color}">${t.pct}%</span>
+      </div>
+      <div class="stat-bar"><i style="width:${(t.pct / maxPct) * 100}%;background:${t.color}"></i></div>
+    </div>`).join('');
+  $('#case-gist').textContent = caseTopic.gist;
+
+  // ③ 筛选条（选项与命中数随专题动态生成）
+  renderCaseFilters();
+
+  // ④ 类案清单（年份 / 层级筛选 + 可展开详情）
+  const list = caseTopic.cases.filter(c =>
+    (caseYear === '全部' || c.year === caseYear) &&
+    (caseLevel === '全部' || c.level === caseLevel));
+  const filtered = caseYear !== '全部' || caseLevel !== '全部';
+
+  $('#case-count').textContent = filtered
+    ? `筛选 ${list.length} / 共 ${caseTopic.cases.length} 篇`
+    : `命中 ${list.length} 篇相关裁判文书`;
+
+  // 筛选条件提示 + 清除按钮
+  const tip = $('#case-filter-tip');
+  if (filtered) {
+    const cond = [caseYear !== '全部' ? caseYear + ' 年' : '', caseLevel !== '全部' ? (CASE_LEVEL_LABEL[caseLevel] || caseLevel) : '']
+      .filter(Boolean).join(' · ');
+    tip.textContent = list.length ? `已筛选：${cond}` : `已筛选：${cond} · 当前组合无命中`;
+    tip.className = list.length ? 'ml-auto text-[11.5px] text-brand-600' : 'ml-auto text-[11.5px] text-amber-600 font-medium';
+  } else {
+    tip.textContent = '';
+    tip.className = 'ml-auto text-[11.5px] text-slate-400';
+  }
+  $('#case-clear').classList.toggle('hidden', !filtered);
+
+  caseList = list;
+
+  $('#case-list').innerHTML = list.length ? list.map((c, i) => `
+    <div class="case-item rounded-xl border border-[#eef1f7] hover:border-brand-200 hover:shadow-[0_2px_10px_rgba(16,24,40,.05)] transition p-4" data-case-idx="${i}">
+      <div class="flex items-start gap-3 cursor-pointer" data-case-toggle="${i}">
+        <div class="min-w-0 flex-1">
+          <div class="text-[14px] font-medium text-ink">${hl(c.title, caseHits)}</div>
+          <div class="text-[12px] text-slate-400 mt-1">
+            ${c.no} · ${c.court} · ${c.year}
+            <span class="tag bg-slate-100 text-slate-500 ml-1">${CASE_LEVEL_LABEL[c.level] || c.level}</span>
+          </div>
+          <p class="text-[13px] leading-6 text-slate-600 mt-2">${hl(c.gist, caseHits)}</p>
+        </div>
+        <div class="flex items-center gap-2 flex-none">
+          <span class="tag ${CASE_COLOR[c.color]} border">${c.result}</span>
+          <span class="case-caret text-slate-300 transition-transform">${icon('<path d="M6 9l6 6 6-6"/>', 15)}</span>
+        </div>
+      </div>
+
+      <div class="case-body hidden mt-4 pt-4 border-t border-[#f2f5fa]">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="text-[12px] font-semibold text-brand-600 mb-2">裁判要点</div>
+            <ul class="space-y-2">
+              ${(c.points || []).map(p => `
+                <li class="flex gap-2 text-[12.5px] leading-6 text-slate-600">
+                  <span class="text-brand-400 flex-none mt-[3px]">${icon('<path d="M5 12l4 4L19 6"/>', 12)}</span>
+                  <span>${hl(p, caseHits)}</span>
+                </li>`).join('')}
+            </ul>
+          </div>
+          <div class="space-y-3">
+            <div class="rounded-xl bg-slate-50 border border-[#eef1f7] p-3">
+              <div class="text-[12px] text-slate-400 mb-1">裁判结果</div>
+              <div class="text-[13px] font-medium text-ink">${c.amount || c.result}</div>
+            </div>
+            <div>
+              <div class="text-[12px] text-slate-400 mb-2">争议焦点</div>
+              <div class="flex flex-wrap gap-2">
+                ${(c.tags || []).map(t => `<span class="tag bg-slate-100 text-slate-600">${t}</span>`).join('')}
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button class="h-8 px-3 rounded-lg border border-brand-200 text-brand-700 text-[12px] hover:bg-brand-50 transition" data-case-quote="${i}">引用到法律分析报告</button>
+              <button class="h-8 px-3 rounded-lg border border-[#dde3ee] text-slate-600 text-[12px] hover:bg-slate-50 transition" data-case-copy="${i}">复制案号</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`).join('')
+    : `<div class="text-center text-[13px] text-slate-400 py-12">
+         当前筛选条件下暂无命中<button class="ml-2 text-brand-600 underline" data-case-clear-inline="1">清除筛选，查看全部 ${caseTopic.cases.length} 篇</button>
+       </div>`;
+}
 
 /* 检索词命中专题 */
 function matchCaseTopic(q) {
@@ -2657,110 +3078,22 @@ function renderCaseMiss(q, empty) {
       <div class="flex flex-wrap gap-2 mt-3">
         ${DATA.caseTopics.map(t => `<span class="chip px-3 py-1.5 rounded-full text-[12.5px] bg-white" data-case-topic="${t.id}">${t.title}</span>`).join('')}
       </div>
-      <p class="text-[12px] text-amber-700/80 mt-3">提示：本原型为演示环境，仅内置上述专题；正式版将接入 1,286 份全量裁判文书库全文检索。</p>
+      <p class="text-[12px] text-amber-700/80 mt-3">提示：本原型为演示环境，仅内置上述 6 大专题（共 ${DATA.caseTopics.reduce((s, t) => s + t.cases.length, 0)} 篇裁判文书）；正式版将接入全量文书库全文检索。</p>
     </div>`;
   $('#case-topic').textContent = '';
   $('#case-corpus').textContent = '0';
   $('#case-tendency').innerHTML = '';
   $('#case-gist').textContent = '';
   $('#case-count').textContent = '';
+  // 引导态下清空筛选条，避免残留上一个专题的年份 / 层级选项造成误解
+  $('#case-years').innerHTML = '';
+  $('#case-levels').innerHTML = '';
+  $('#case-filter-tip').textContent = '';
+  $('#case-clear').classList.add('hidden');
+  caseTopicId = '';
+  caseYear = '全部';
+  caseLevel = '全部';
   $('#case-list').innerHTML = `<div class="text-center text-[13px] text-slate-400 py-12">暂无结果，请调整检索词</div>`;
-}
-
-function renderCases() {
-  const q = $('#case-query').value.trim();
-
-  if (!q) { caseLastQuery = q; renderCaseMiss('', true); return; }
-
-  const m = matchCaseTopic(q);
-  if (!m) { caseLastQuery = q; renderCaseMiss(q, false); return; }
-
-  caseTopic = m.topic;
-  caseHits = m.hits;
-  caseLastQuery = q;
-
-  // ① 命中提示条
-  $('#case-hit').innerHTML = `
-    <div class="rounded-xl border border-brand-200 bg-gradient-to-r from-brand-50 to-white p-4">
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="tag bg-brand-600 text-white text-[11px]">已命中专题</span>
-        <span class="text-[13.5px] font-semibold text-brand-900">${caseTopic.title}</span>
-        <span class="ml-auto text-[11.5px] text-slate-500 max-w-[46%] truncate">检索：${esc(q)}</span>
-      </div>
-      <div class="flex flex-wrap items-center gap-2 mt-2.5">
-        <span class="text-[11.5px] text-slate-500">命中关键词</span>
-        ${caseHits.map(h => `<span class="tag bg-white text-brand-700 border border-brand-100">${esc(h)}</span>`).join('')}
-        <span class="ml-auto text-[11.5px] text-slate-400">相关度 ${m.pct}% · 检索耗时 0.9s · 语料库命中 ${caseTopic.corpus.toLocaleString()} 份</span>
-      </div>
-    </div>`;
-
-  // ② 倾向预判（随专题变化）
-  $('#case-topic').textContent = caseTopic.title;
-  $('#case-corpus').textContent = caseTopic.corpus.toLocaleString();
-  const maxPct = Math.max.apply(null, caseTopic.tendency.map(t => t.pct));
-  $('#case-tendency').innerHTML = caseTopic.tendency.map(t => `
-    <div>
-      <div class="flex items-center justify-between text-[13px] mb-2">
-        <span class="text-slate-600">${t.name}</span>
-        <span class="font-semibold" style="color:${t.color}">${t.pct}%</span>
-      </div>
-      <div class="stat-bar"><i style="width:${(t.pct / maxPct) * 100}%;background:${t.color}"></i></div>
-    </div>`).join('');
-  $('#case-gist').textContent = caseTopic.gist;
-
-  // ③ 类案清单（年份 / 层级筛选 + 可展开详情）
-  const list = caseTopic.cases.filter(c =>
-    (caseYear === '全部' || c.year === caseYear) &&
-    (caseLevel === '全部' || c.level === caseLevel));
-  $('#case-count').textContent = `命中 ${list.length} 篇相关裁判文书`;
-  caseList = list;
-
-  $('#case-list').innerHTML = list.length ? list.map((c, i) => `
-    <div class="case-item rounded-xl border border-[#eef1f7] hover:border-brand-200 hover:shadow-[0_2px_10px_rgba(16,24,40,.05)] transition p-4" data-case-idx="${i}">
-      <div class="flex items-start gap-3 cursor-pointer" data-case-toggle="${i}">
-        <div class="min-w-0 flex-1">
-          <div class="text-[14px] font-medium text-ink">${hl(c.title, caseHits)}</div>
-          <div class="text-[12px] text-slate-400 mt-1">${c.no} · ${c.court} · ${c.year}</div>
-          <p class="text-[13px] leading-6 text-slate-600 mt-2">${hl(c.gist, caseHits)}</p>
-        </div>
-        <div class="flex items-center gap-2 flex-none">
-          <span class="tag ${CASE_COLOR[c.color]} border">${c.result}</span>
-          <span class="case-caret text-slate-300 transition-transform">${icon('<path d="M6 9l6 6 6-6"/>', 15)}</span>
-        </div>
-      </div>
-
-      <div class="case-body hidden mt-4 pt-4 border-t border-[#f2f5fa]">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div class="text-[12px] font-semibold text-brand-600 mb-2">裁判要点</div>
-            <ul class="space-y-2">
-              ${(c.points || []).map(p => `
-                <li class="flex gap-2 text-[12.5px] leading-6 text-slate-600">
-                  <span class="text-brand-400 flex-none mt-[3px]">${icon('<path d="M5 12l4 4L19 6"/>', 12)}</span>
-                  <span>${hl(p, caseHits)}</span>
-                </li>`).join('')}
-            </ul>
-          </div>
-          <div class="space-y-3">
-            <div class="rounded-xl bg-slate-50 border border-[#eef1f7] p-3">
-              <div class="text-[12px] text-slate-400 mb-1">裁判结果</div>
-              <div class="text-[13px] font-medium text-ink">${c.amount || c.result}</div>
-            </div>
-            <div>
-              <div class="text-[12px] text-slate-400 mb-2">争议焦点</div>
-              <div class="flex flex-wrap gap-2">
-                ${(c.tags || []).map(t => `<span class="tag bg-slate-100 text-slate-600">${t}</span>`).join('')}
-              </div>
-            </div>
-            <div class="flex flex-wrap gap-2 pt-1">
-              <button class="h-8 px-3 rounded-lg border border-brand-200 text-brand-700 text-[12px] hover:bg-brand-50 transition" data-case-quote="${i}">引用到法律分析报告</button>
-              <button class="h-8 px-3 rounded-lg border border-[#dde3ee] text-slate-600 text-[12px] hover:bg-slate-50 transition" data-case-copy="${i}">复制案号</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>`).join('')
-    : `<div class="text-center text-[13px] text-slate-400 py-12">当前筛选条件下暂无命中，请调整年份或法院层级</div>`;
 }
 
 /* 按专题 id 直接检索（引导态里的专题快捷入口使用） */
@@ -3325,6 +3658,20 @@ function bindEvents() {
   /* --- 类案检索：检索 + 展开详情 + 引用到报告 --- */
   $('#case-btn').addEventListener('click', renderCases);
   $('#case-query').addEventListener('keydown', e => { if (e.key === 'Enter') renderCases(); });
+
+  /* 清除年份 / 层级筛选（顶部按钮与空结果内联按钮共用） */
+  const clearCaseFilter = () => {
+    caseYear = '全部';
+    caseLevel = '全部';
+    renderCaseFilters();
+    renderCases();
+    toast('已清除筛选条件');
+  };
+  $('#case-clear').addEventListener('click', clearCaseFilter);
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-case-clear-inline]')) clearCaseFilter();
+  });
+
   document.addEventListener('click', e => {
     // 年份 / 层级筛选
     const y = e.target.closest('[data-case-year]');
