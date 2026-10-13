@@ -739,10 +739,24 @@ mark.kw {
             <label class="text-[12px] text-slate-500">报告模板</label>
             <div id="rpt-tpl" class="space-y-2 mt-2 mb-5"></div>
 
-            <label class="text-[12px] text-slate-500">用工所在地</label>
-            <select id="rpt-city" class="w-full h-11 mt-2 mb-5 px-3 rounded-xl border border-[#dde3ee] bg-slate-50/60 text-[14px] outline-none focus:border-brand-400 focus:bg-white transition">
-              <option>广州市</option><option>上海市</option><option>深圳市</option><option>北京市</option><option>杭州市</option><option>成都市</option>
-            </select>
+            <!-- 用工所在地：与「智能法规查询」同一套可搜索城市库（中文 / 拼音首字母 / 省份） -->
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-[12px] text-slate-500">用工所在地</label>
+              <span class="text-[11px] text-slate-400">已收录 <b class="text-slate-600" id="rpt-city-count">0</b> 个城市</span>
+            </div>
+            <div class="relative mb-3" id="rpt-city-picker">
+              <div class="flex items-center gap-2 h-11 pl-3 pr-2 rounded-xl border border-[#dde3ee] bg-slate-50/60 focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-50 transition">
+                <svg class="text-slate-400 flex-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                <input id="rpt-city-input" type="text" autocomplete="off" placeholder="输入城市名或拼音（长沙 / cs）"
+                  class="flex-1 min-w-0 h-full bg-transparent text-[13.5px] outline-none placeholder:text-slate-400" />
+                <span id="rpt-city-cur" class="tag bg-brand-50 text-brand-700 border border-brand-100 flex-none">广州市</span>
+              </div>
+              <div id="rpt-city-drop" class="hidden absolute z-40 left-0 right-0 mt-2 max-h-[286px] overflow-auto rounded-xl border border-[#e5e8f0] bg-white shadow-[0_14px_34px_rgba(16,24,40,.14)] p-2"></div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap mb-5">
+              <span id="rpt-city-tier" class="tag">精编属地指引</span>
+              <span id="rpt-city-hint" class="text-[11px] text-slate-400"></span>
+            </div>
 
             <label class="text-[12px] text-slate-500">案情描述</label>
             <textarea id="rpt-scene" rows="5" class="w-full mt-2 mb-5 p-3 rounded-xl border border-[#dde3ee] bg-slate-50/60 text-[13px] leading-6 outline-none focus:border-brand-400 focus:bg-white transition resize-none">某科技公司拟对一名入职 2 个月的员工，以"试用期考核不合格"为由解除劳动合同，员工月薪 12,000 元，未签订书面录用条件确认书，考核记录仅有直属主管口头评价。</textarea>
@@ -1128,6 +1142,16 @@ const DATA = {
 
   /* 首页展示的热门城市 */
   lawHotCities: ['广州市', '上海市', '北京市', '深圳市', '杭州市', '成都市', '南京市', '苏州市', '武汉市', '长沙市', '西安市', '重庆市'],
+
+  /* 各精编城市的属地裁判文书 / 会议纪要（用于报告页「依据」栏属地化） */
+  lawLocalDocs: {
+    '广州市': '粤高法〔2017〕147 号',
+    '深圳市': '《深圳经济特区和谐劳动关系促进条例》',
+    '上海市': '上海高院劳动争议裁审口径',
+    '北京市': '北京高院劳动争议会议纪要',
+    '杭州市': '浙江高院劳动争议裁审解答',
+    '成都市': '四川高院劳动争议裁审口径'
+  },
 
   /* ---------- 省级裁审画像：未收录精编指引的城市，按所属省级画像推定 ---------- */
   lawProvinceProfiles: {
@@ -2276,6 +2300,7 @@ let lawTopic = DATA.lawTopics[0];   // 当前命中专题
 let lawHits = [];                   // 本次命中的关键词
 let lawAutoCity = '';               // 本次是否由提问中的城市名自动切换
 let lawLastQuery = '';              // 上次查询文本，用于判断是否为「新一次查询」
+let rptPaperCity = '';              // 报告纸面生成时所用的用工所在地（用于提示「所在地已变更」）
 
 /* 按城市名取城市库记录 */
 function cityInfo(name) {
@@ -2327,16 +2352,35 @@ function resolveCityScope(name, topic) {
   };
 }
 
-/* 渲染城市选择器：当前城市标签 / 收录数量 / 热门城市快捷片 */
+/* 属地口径档位：精编指引 or 省级画像推定（报告页与查询页共用同一判定） */
+function cityTier(name) {
+  return DATA.lawFullCities.indexOf(name) >= 0
+    ? { label: '精编属地指引', cls: 'bg-emerald-50 text-emerald-700 border border-emerald-100' }
+    : { label: '省级画像推定 · 待原文核实', cls: 'bg-amber-50 text-amber-700 border border-amber-100' };
+}
+
+/* 渲染城市选择器：法规查询页 + 报告页共用同一「用工所在地」状态。
+   当前城市标签 / 收录数量 / 热门城市快捷片 / 属地口径档位 */
 function renderCityPicker() {
   $('#law-city-cur').textContent = lawCity;
   $('#law-city-count').textContent = DATA.lawCityLib.length;
   $('#law-hot').innerHTML = DATA.lawHotCities.map(c => `
     <span class="chip px-3 py-1 rounded-full ${c === lawCity ? 'is-on' : ''}" data-law-city="${c}">${c}</span>`).join('');
+
+  // 报告页选择器（DOM 不存在时跳过，便于局部复用）
+  if (!$('#rpt-city-cur')) return;
+  const tier = cityTier(lawCity);
+  const stale = rptPaperCity && rptPaperCity !== lawCity;
+  $('#rpt-city-cur').textContent = lawCity;
+  $('#rpt-city-count').textContent = DATA.lawCityLib.length;
+  $('#rpt-city-tier').textContent = tier.label;
+  $('#rpt-city-tier').className = 'tag ' + tier.cls;
+  $('#rpt-city-hint').textContent = stale ? '所在地已变更 · 请重新生成本报告' : '与「智能法规查询」所在地联动';
+  $('#rpt-city-hint').className = stale ? 'text-[11px] text-amber-600 font-medium' : 'text-[11px] text-slate-400';
 }
 
-/* 展开城市候选下拉：无关键词时置顶热门城市，其余按城市库顺序 */
-function openCityDrop(kw) {
+/* 城市候选下拉的 HTML（两个选择器共用同一份渲染，避免逻辑分叉） */
+function cityDropHTML(kw) {
   const s = (kw || '').trim();
   let list;
   if (!s) {
@@ -2346,7 +2390,7 @@ function openCityDrop(kw) {
   } else {
     list = filterCities(s).slice(0, 40);
   }
-  $('#law-city-drop').innerHTML = list.length ? list.map(c => `
+  return list.length ? list.map(c => `
     <div class="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition ${c.n === lawCity ? 'bg-brand-50/70' : 'hover:bg-slate-50'}" data-law-city="${c.n}">
       <span class="text-[13px] ${c.n === lawCity ? 'font-semibold text-brand-700' : 'text-slate-700'}">${c.n}</span>
       <span class="tag bg-slate-100 text-slate-500">${c.p}</span>
@@ -2356,17 +2400,39 @@ function openCityDrop(kw) {
     : `<div class="px-3 py-4 text-[12.5px] text-slate-400 leading-6">
          未匹配到「${esc(s)}」。当前收录 ${DATA.lawCityLib.length} 个主要用工城市，可尝试输入省份（如「江苏」）或拼音首字母（如「sz」）。
        </div>`;
+}
+
+/* 展开城市候选下拉：无关键词时置顶热门城市，其余按城市库顺序 */
+function openCityDrop(kw) {
+  $('#law-city-drop').innerHTML = cityDropHTML(kw);
   $('#law-city-drop').classList.remove('hidden');
 }
 
-function closeCityDrop() { $('#law-city-drop').classList.add('hidden'); }
+/* 报告页的候选下拉 */
+function openReportCityDrop(kw) {
+  const drop = $('#rpt-city-drop');
+  if (!drop) return;
+  drop.innerHTML = cityDropHTML(kw);
+  drop.classList.remove('hidden');
+}
 
-/* 选定城市：更新状态并刷新指引 */
+/* 收起全部城市下拉（含报告页） */
+function closeCityDrops() {
+  ['#law-city-drop', '#rpt-city-drop'].forEach(sel => {
+    const el = $(sel);
+    if (el) el.classList.add('hidden');
+  });
+}
+
+/* 选定城市：更新状态并刷新指引（查询页与报告页共用同一所在地） */
 function selectCity(name) {
   lawCity = name;
   lawAutoCity = '';
-  $('#law-city-input').value = '';
-  closeCityDrop();
+  const li = $('#law-city-input');
+  const ri = $('#rpt-city-input');
+  if (li) li.value = '';
+  if (ri) ri.value = '';
+  closeCityDrops();
   renderCityPicker();
   renderLaw();
 }
@@ -2899,10 +2965,17 @@ function generateReport() {
 }
 
 function renderReport() {
-  const city = $('#rpt-city').value;
+  const city = lawCity;                                   // 与法规查询共用同一「用工所在地」
+  const cityMeta = cityInfo(city);                        // 所属省市
+  const tier = cityTier(city);                            // 精编指引 / 省级画像推定
+  const scope = resolveCityScope(city, DATA.lawTopics[0]);// 属地化适用指引（沿用查询页同一套口径）
+  const illegalPct = 100 - scope.winRate;                 // 由属地企业胜诉参考率反推违法解除概率
+  const localRef = DATA.lawLocalDocs[city] || (cityMeta.p + ' 省级裁审画像（待原文核实）');
   const scene = $('#rpt-scene').value;
   const tplName = (DATA.reportTpls.find(t => t.on) || DATA.reportTpls[0]).name;
   const today = '2026 年 10 月 8 日';
+  rptPaperCity = city;
+  renderCityPicker();                                     // 同步「已变更」提示状态
 
   $('#report-holder').className = 'rise rounded-2xl bg-white border border-[#e5e8f0] overflow-hidden';
   $('#report-holder').innerHTML = `
@@ -2913,9 +2986,10 @@ function renderReport() {
           <div class="flex items-center gap-2">
             <div class="text-[12px] text-slate-400 mb-2">外服法务通 · AI 生成</div>
             <span class="tag bg-amber-50 text-amber-700 border border-amber-200 text-[10.5px] px-2 py-0.5">AI 草案 · 待律师复核签发</span>
+            <span class="tag ${tier.cls} text-[10.5px] px-2 py-0.5">${tier.label}</span>
           </div>
           <h2 class="text-[21px] font-semibold text-ink leading-snug">${tplName}</h2>
-          <div class="text-[12px] text-slate-400 mt-2">用工所在地：${city}　|　生成日期：${today}　|　报告编号：FSG-LR-20261008-0417</div>
+          <div class="text-[12px] text-slate-400 mt-2">用工所在地：${city}（${cityMeta.p}）　|　生成日期：${today}　|　报告编号：FSG-LR-20261008-0417</div>
         </div>
         <div class="w-12 h-12 rounded-xl bg-brand-900 flex items-center justify-center text-white flex-none">
           ${icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6l7-3z"/><path d="M9.2 12.2l2 2 3.6-4"/>', 24)}
@@ -2928,9 +3002,33 @@ function renderReport() {
         <div class="rounded-xl bg-slate-50 border border-[#eef1f7] p-4 text-[13px] leading-7 text-slate-700">${scene}</div>
       </div>
 
+      <!-- 属地适用指引（随「用工所在地」联动，精编城用精编口径、其余按省级画像推定并标注） -->
+      <div class="mt-6">
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2">
+          <span class="w-1 h-3.5 rounded bg-sky-500"></span>二、属地适用指引
+          <span class="tag ${tier.cls} ml-1">${city}</span>
+        </h3>
+        <div class="rounded-xl border border-[#dbe6f7] bg-brand-50/40 p-4">
+          <div class="flex flex-wrap items-center gap-2 mb-2">
+            <span class="tag bg-white text-brand-700 border border-brand-100">${scope.scope}</span>
+            <span class="tag bg-white text-slate-600 border border-brand-100">审查尺度 · ${scope.stricter}</span>
+            <span class="tag bg-white text-slate-600 border border-brand-100">同类案件企业胜诉参考率 ${scope.winRate}%</span>
+          </div>
+          <p class="text-[13px] leading-7 text-brand-900">${scope.summary}</p>
+          <ul class="mt-3 space-y-1.5">
+            ${scope.keyPoints.map((p, i) => `<li class="flex gap-2 text-[12.5px] leading-6 text-slate-700">
+              <span class="text-brand-500 flex-none">${i + 1}.</span><span>${p}</span></li>`).join('')}
+          </ul>
+          <div class="mt-3 pt-3 border-t border-brand-100 flex gap-2 text-[12.5px] leading-6 text-amber-900">
+            <span class="font-semibold flex-none">属地差异提示</span><span>${scope.diffNote}</span>
+          </div>
+          ${scope.edited ? '' : `<div class="mt-2 text-[11.5px] leading-5 text-amber-700">※ 该城市暂无精编指引，以上口径由所属省级裁审画像模型推定生成，正式出具意见前需经当地最新裁审文件原文核实。</div>`}
+        </div>
+      </div>
+
       <!-- 风险点 -->
       <div class="mt-6">
-        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-rose-500"></span>二、风险点清单</h3>
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-rose-500"></span>三、风险点清单</h3>
         <table class="w-full text-[12.5px] border border-[#e5e8f0] rounded-lg overflow-hidden">
           <thead class="bg-slate-50 text-slate-500">
             <tr>
@@ -2943,7 +3041,7 @@ function renderReport() {
           <tbody>
             ${[
               ['未书面告知录用条件并签收', '高', '《劳动合同法》第 21 条'],
-              ['考核标准缺乏客观量化记录', '高', '粤高法〔2017〕147 号'],
+              ['考核标准缺乏客观量化记录', '高', localRef],
               ['解除决定送达时间临近试用期届满', '中', '《劳动合同法》第 39 条'],
               ['未履行工会（职工代表）告知程序', '中', '《劳动合同法》第 43 条'],
               ['赔偿测算未考虑 2N 风险敞口', '高', '《劳动合同法》第 87 条']
@@ -2962,7 +3060,7 @@ function renderReport() {
 
       <!-- 结论 -->
       <div class="mt-6">
-        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-amber-500"></span>三、结论与测算</h3>
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-amber-500"></span>四、结论与测算</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="rounded-xl border border-rose-100 bg-rose-50/60 p-4">
             <div class="text-[12px] text-rose-700 mb-1">解除合法性结论</div>
@@ -2978,13 +3076,13 @@ function renderReport() {
           </div>
         </div>
         <p class="text-[13px] leading-7 text-slate-700 mt-4">
-          在现有证据条件下，直接以“试用期考核不合格”解除，被认定为违法解除的概率约 <b>68%</b>。建议优先采取协商解除路径：由公司提出并与员工协商一致解除，支付经济补偿，整体成本可控且无诉讼风险；若员工不接受，再评估补正录用条件签收件与量化考核记录的可行性。
+          在现有证据条件下，直接以“试用期考核不合格”解除，在 <b>${city}</b> 被认定为违法解除的概率约 <b>${illegalPct}%</b>（依据该属地同类案件企业胜诉参考率 ${scope.winRate}% 反推）。建议优先采取协商解除路径：由公司提出并与员工协商一致解除，支付经济补偿，整体成本可控且无诉讼风险；若员工不接受，再评估补正录用条件签收件与量化考核记录的可行性。
         </p>
       </div>
 
       <!-- 处置建议 -->
       <div class="mt-6">
-        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-emerald-500"></span>四、处置建议与时间节点</h3>
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-emerald-500"></span>五、处置建议与时间节点</h3>
         <div class="space-y-2.5">
           ${[
             ['T+0', '立即冻结解除流程，避免形成不可逆的解除事实'],
@@ -3003,7 +3101,7 @@ function renderReport() {
       ${DATA.reportQuotes.length ? `
       <!-- 参考类案（来自类案检索智库的引用） -->
       <div class="mt-6">
-        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-violet-500"></span>五、参考类案</h3>
+        <h3 class="text-[14px] font-semibold text-ink mb-3 flex items-center gap-2"><span class="w-1 h-3.5 rounded bg-violet-500"></span>六、参考类案</h3>
         <div class="space-y-2">
           ${DATA.reportQuotes.map(no => {
             const all = DATA.caseTopics.reduce((acc, t) => acc.concat(t.cases), []);
@@ -3025,7 +3123,8 @@ function renderReport() {
       <!-- 落款 -->
       <div class="mt-8 pt-5 border-t border-[#e5e8f0] flex items-end justify-between">
         <div class="text-[11px] text-slate-400 leading-6">
-          本报告由「外服法务通」AI 引擎自动生成，匹配 512 城属地政策库与 ${DATA.caseTopics.reduce((s, t) => s + t.corpus, 0).toLocaleString()} 份类案${DATA.reportQuotes.length ? '，引用类案 ' + DATA.reportQuotes.length + ' 份' : ''}。<br/>
+          本报告由「外服法务通」AI 引擎自动生成，匹配 58 城（目标 512 城）属地政策库与 ${DATA.caseTopics.reduce((s, t) => s + t.corpus, 0).toLocaleString()} 份类案${DATA.reportQuotes.length ? '，引用类案 ' + DATA.reportQuotes.length + ' 份' : ''}。<br/>
+          属地口径来源：${city} · ${scope.edited ? '精编属地指引（人工整理）' : cityMeta.p + ' 省级裁审画像（模型推定，待原文核实）'}。<br/>
           内容仅供参考，重大决策建议由领域专家复核后执行。
         </div>
         <div class="text-[12px] text-slate-500 text-right">
@@ -3194,19 +3293,33 @@ function bindEvents() {
       if (list.length) selectCity(list[0].n);
       else cityInput.value = '';
     }
-    if (e.key === 'Escape') { closeCityDrop(); cityInput.blur(); }
+    if (e.key === 'Escape') { closeCityDrops(); cityInput.blur(); }
   });
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-law-city]');
     if (c) selectCity(c.dataset.lawCity);
     const q = e.target.closest('[data-law-quick]');
     if (q) { $('#law-query').value = q.dataset.lawQuick; renderLaw(); }
-    if (!e.target.closest('#law-city-picker')) closeCityDrop();
+    if (!e.target.closest('#law-city-picker') && !e.target.closest('#rpt-city-picker')) closeCityDrops();
   });
   $('#law-btn').addEventListener('click', renderLaw);
   $('#law-query').addEventListener('keydown', e => { if (e.key === 'Enter') renderLaw(); });
   document.addEventListener('change', e => {
     if (e.target.classList.contains('law-check')) updateLawProgress();
+  });
+
+  /* --- 报告页：用工所在地选择器（与法规查询共用 58 城可搜索城市库） --- */
+  const rptCityInput = $('#rpt-city-input');
+  rptCityInput.addEventListener('focus', () => openReportCityDrop(rptCityInput.value));
+  rptCityInput.addEventListener('input', () => openReportCityDrop(rptCityInput.value));
+  rptCityInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const list = filterCities(rptCityInput.value);
+      if (list.length) selectCity(list[0].n);
+      else rptCityInput.value = '';
+    }
+    if (e.key === 'Escape') { closeCityDrops(); rptCityInput.blur(); }
   });
 
   /* --- 类案检索：检索 + 展开详情 + 引用到报告 --- */
